@@ -1,0 +1,62 @@
+[project]
+name = "pulse-backend"
+version = "0.1.0"
+description = "Pulse — сервис мониторинга доступности сайтов и API (backend)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "django[argon2]>=5.2,<5.3",
+    "django-cors-headers>=4.9.0",
+    "django-environ>=0.14.0",
+    "django-filter>=26.2",
+    "djangorestframework>=3.18.3",
+    "djangorestframework-simplejwt>=5.5.1",
+    "drf-spectacular>=0.30.0",
+    "psycopg[binary]>=3.3.8",
+    "redis>=8.1.0",
+    "celery>=5.7.0",
+    "django-celery-beat>=2.9.0",
+    "httpx>=0.28.1",
+    "python-json-logger>=4.2.0",
+    "gunicorn>=26.2.0",
+    "whitenoise>=6.12.0",
+    "openai>=3.46.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["*/migrations/*", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "DJ",  # flake8-django
+]
+ignore = [
+    "E501",  # line length is handled by the formatter
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "config"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "*_tests.py"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.4",
+]
