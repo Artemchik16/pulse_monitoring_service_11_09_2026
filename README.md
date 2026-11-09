@@ -5,12 +5,38 @@
 
 ## Локальный запуск
 
-```bash
-cp backend/.env.example backend/.env   # заполнить DEBUG=true, SECRET_KEY и т.д.
-docker compose up -d --build           # PostgreSQL :5432, Redis :6379, миграции, Celery worker + beat
+Одной командой (нужен только Docker):
 
-cd backend && uv sync && uv run python manage.py runserver   # API на :8000
-cd frontend && nvm use && npm install && npm run dev         # UI на :5173
+```bash
+docker compose up --build
+```
+
+- **Приложение:** http://localhost:8080
+- **Демо-аккаунт:** `demo@pulse.app` / `DemoPulse2026!` — мониторы Pleazy, EnterEdu, AgroGo,
+  Proxymo и публичная статус-страница http://localhost:8080/status/demo
+- **API и Swagger:** http://localhost:8000/api/docs (или через фронтенд http://localhost:8080/api/docs),
+  health — http://localhost:8000/health
+
+Что поднимается:
+
+| Сервис | Что делает |
+|---|---|
+| `db` | PostgreSQL 16 (порт 5432 открыт для локальной разработки) |
+| `redis` | Redis 7: кэш и брокер Celery (порт 6379) |
+| `backend` | Django + gunicorn на :8000. Старт через `deploy/entrypoint.sh`: `migrate` → `create_demo_user` → `seed_demo` → gunicorn; все шаги идемпотентны, повторный старт ничего не дублирует |
+| `celery-worker`, `celery-beat` | фоновые проверки по расписанию и очистка истории; entrypoint не запускают (миграции делает только backend) и стартуют после здорового backend |
+| `frontend` | собранный React (nginx, не root): отдаёт SPA и проксирует `/api`, `/health`, `/admin`, `/static` на backend — один origin, CORS не нужен |
+
+Порядок старта задан healthcheck'ами: worker, beat и frontend ждут здорового backend, а он
+становится здоровым только после миграций и демо-данных. Настройки — `backend/.env` (образец с описанием всех переменных —
+`backend/.env.example`); адреса БД и Redis compose подставляет свои.
+
+Разработка без Docker для приложения (инфраструктура — из compose):
+
+```bash
+docker compose up -d db redis
+cd backend && uv sync && uv run python manage.py migrate && uv run python manage.py runserver
+cd frontend && nvm use && npm install && npm run dev     # http://localhost:5173
 ```
 
 ## Ключевые решения

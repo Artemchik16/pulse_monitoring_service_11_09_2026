@@ -36,4 +36,7 @@ COPY --from=builder --chown=app:app /app /app
 USER app
 EXPOSE 8000
 
+# Migrations + demo user + demo data, then the command (gunicorn). Celery containers of the same
+# image skip it with `entrypoint: []`: only one container may run migrations
+ENTRYPOINT ["/app/deploy/entrypoint.sh"]
 CMD ["gunicorn", "config.wsgi:application", "--config", "gunicorn.conf.py"]

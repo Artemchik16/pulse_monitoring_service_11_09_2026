@@ -1,12 +1,17 @@
+# One command for the whole system: docker compose up --build
+# Frontend: http://localhost:8080 (demo: demo@pulse.app / DemoPulse2026!)
+# API: http://localhost:8000/api/docs (also via http://localhost:8080/api/docs)
 name: pulse
 
 x-backend: &backend
   build:
     context: ./backend
+  image: pulse-backend
   env_file:
     - path: ./backend/.env
       required: false
   environment:
+    # Inside compose the dependencies are reachable by service name
     DATABASE_URL: postgres://pulse:pulse@db:5432/pulse
     REDIS_URL: redis://redis:6379/0
     CELERY_BROKER_URL: redis://redis:6379/0
@@ -39,6 +44,53 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
+
+  # deploy/entrypoint.sh: migrate -> create_demo_user -> seed_demo, then gunicorn
+  backend:
+    <<: *backend
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      # Migrations and demo data run before gunicorn starts
+      start_period: 60s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    <<: *backend
+    # Skip the entrypoint: the backend container owns migrations; wait until it is healthy
+    entrypoint: []
+    # Threads: checks are I/O-bound, a hanging target must not block a whole process
+    command: ["celery", "-A", "config", "--quiet", "worker", "--loglevel=info", "--pool=threads", "--concurrency=20"]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  celery-beat:
+    <<: *backend
+    entrypoint: []
+    command: ["celery", "-A", "config", "--quiet", "beat", "--loglevel=info"]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    image: pulse-frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
