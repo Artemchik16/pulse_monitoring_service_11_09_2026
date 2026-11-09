@@ -19,6 +19,15 @@ class MonitorRepository:
 
         return list(Monitor.objects.filter(owner_id=owner_id).values_list("id", flat=True))
 
+    def filter_owned_ids(self, *, owner_id: int, monitor_ids: list[int]) -> set[int]:
+        """Subset of the given ids that belong to the owner."""
+
+        return set(
+            Monitor.objects.filter(owner_id=owner_id, id__in=monitor_ids).values_list(
+                "id", flat=True
+            )
+        )
+
     def get_by_id(self, *, monitor_id: int, owner_id: int) -> Monitor:
         """Get the owner's Monitor by ID."""
 

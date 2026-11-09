@@ -1,4 +1,4 @@
-export { monitorQueryOptions } from './api/hooks'
+export { monitorQueryOptions, useMonitors } from './api/hooks'
 export { dashboardSearchSchema } from './model/dashboard'
 export { monitorDetailSearchSchema } from './model/detail'
 export type { Monitor, MonitorStatus } from './model/types'

@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "incidents.apps.IncidentsConfig",
     "checks.apps.ChecksConfig",
     "stats.apps.StatsConfig",
+    "status_pages.apps.StatusPagesConfig",
     "api.apps.ApiConfig",
 ]
 #########################
@@ -222,7 +223,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "common.pagination.DefaultPagination",
     "DEFAULT_SCHEMA_CLASS": "common.openapi.PulseAutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.unified_exception_handler",
-    "DEFAULT_THROTTLE_RATES": {"auth": "20/min"},
+    "DEFAULT_THROTTLE_RATES": {"auth": "20/min", "public_status_page": "120/min"},
 }
 #########################
 
@@ -258,6 +259,7 @@ SPECTACULAR_SETTINGS = {
         {"name": "Monitors", "description": "Мониторы: CRUD, пагинация, фильтр по статусу"},
         {"name": "Stats", "description": "Uptime, время ответа и график за 24h / 7d / 30d"},
         {"name": "Incidents", "description": "Инциденты: открываются и закрываются проверками"},
+        {"name": "Status pages", "description": "Статус-страницы: свои и публичные /status/{slug}"},
         {"name": "Health", "description": "Проверка работоспособности (БД, Redis)"},
     ],
     "SWAGGER_UI_SETTINGS": {

@@ -19,6 +19,13 @@ import {
   monitorQueryOptions,
   NewMonitorPage,
 } from '@/modules/monitors'
+import {
+  EditStatusPagePage,
+  NewStatusPagePage,
+  PublicStatusPage,
+  StatusPagesPage,
+  statusPageQueryOptions,
+} from '@/modules/status-pages'
 import { ApiError, isAuthenticated, sessionStore } from '@/shared/api'
 
 import { AppShell } from './layout/AppShell'
@@ -92,24 +99,30 @@ const newMonitorRoute = createRoute({
   component: NewMonitorPage,
 })
 
-/** `/monitors/$monitorId/...`: the id is a positive integer, anything else is "not found". */
+/** Numeric path ids: anything that is not a positive integer is "not found". */
+function parseId(raw: string): number {
+  const id = Number(raw)
+  if (!Number.isInteger(id) || id <= 0) throw notFound()
+  return id
+}
+
 const monitorParams = {
-  parse: ({ monitorId }: { monitorId: string }) => {
-    const id = Number(monitorId)
-    if (!Number.isInteger(id) || id <= 0) throw notFound()
-    return { monitorId: id }
-  },
+  parse: ({ monitorId }: { monitorId: string }) => ({ monitorId: parseId(monitorId) }),
   stringify: ({ monitorId }: { monitorId: number }) => ({ monitorId: String(monitorId) }),
 }
 
-async function loadMonitor({ context, params }: { context: RouterContext; params: { monitorId: number } }) {
+/** Missing or someone else's object: the API answers 404 for both. */
+async function ensureOr404(load: () => Promise<unknown>) {
   try {
-    await context.queryClient.ensureQueryData(monitorQueryOptions(params.monitorId))
+    await load()
   } catch (error) {
-    // Missing or someone else's monitor: the API answers 404 for both
     if (error instanceof ApiError && error.status === 404) throw notFound()
     throw error
   }
+}
+
+function loadMonitor({ context, params }: { context: RouterContext; params: { monitorId: number } }) {
+  return ensureOr404(() => context.queryClient.ensureQueryData(monitorQueryOptions(params.monitorId)))
 }
 
 const monitorDetailRoute = createRoute({
@@ -129,10 +142,50 @@ const editMonitorRoute = createRoute({
   component: EditMonitorPage,
 })
 
+const statusPagesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/status-pages',
+  component: StatusPagesPage,
+})
+
+const newStatusPageRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/status-pages/new',
+  component: NewStatusPagePage,
+})
+
+const editStatusPageRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/status-pages/$pageId/edit',
+  params: {
+    parse: ({ pageId }: { pageId: string }) => ({ pageId: parseId(pageId) }),
+    stringify: ({ pageId }: { pageId: number }) => ({ pageId: String(pageId) }),
+  },
+  loader: ({ context, params }) =>
+    ensureOr404(() => context.queryClient.ensureQueryData(statusPageQueryOptions(params.pageId))),
+  component: EditStatusPagePage,
+})
+
+/** Public status page: no auth guard, no app shell; works for signed-in users too. */
+const publicStatusRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/status/$slug',
+  component: PublicStatusPage,
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
-  appRoute.addChildren([dashboardRoute, newMonitorRoute, monitorDetailRoute, editMonitorRoute]),
+  publicStatusRoute,
+  appRoute.addChildren([
+    dashboardRoute,
+    newMonitorRoute,
+    monitorDetailRoute,
+    editMonitorRoute,
+    statusPagesRoute,
+    newStatusPageRoute,
+    editStatusPageRoute,
+  ]),
 ])
 
 export function createAppRouter(queryClient: QueryClient, history?: RouterHistory) {

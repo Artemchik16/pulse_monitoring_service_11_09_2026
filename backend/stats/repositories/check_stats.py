@@ -94,6 +94,19 @@ class CheckStatsRepository:
             .order_by("monitor_id", "bucket")
         )
 
+    def uptime_for_monitors(
+        self, *, monitor_ids: list[int], since: datetime
+    ) -> dict[int, tuple[int, int]]:
+        """(total, succeeded) checks per monitor since the moment, one GROUP BY for all."""
+
+        rows = (
+            CheckResult.objects.filter(monitor_id__in=monitor_ids, checked_at__gte=since)
+            .order_by()
+            .values("monitor_id")
+            .annotate(total=Count("ok"), succeeded=Count("ok", filter=Q(ok=True)))
+        )
+        return {row["monitor_id"]: (row["total"], row["succeeded"]) for row in rows}
+
     def latest_for_monitors(self, *, monitor_ids: list[int]) -> dict[int, dict[str, Any]]:
         """The most recent check of each monitor, keyed by monitor id.
 

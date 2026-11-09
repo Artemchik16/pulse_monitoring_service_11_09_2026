@@ -1,6 +1,7 @@
 export { Button, type ButtonProps } from './Button'
 export { buttonVariants } from './buttonStyles'
 export { Card } from './Card'
+export { Checkbox } from './Checkbox'
 export { ConfirmDialog } from './ConfirmDialog'
 export { FormField } from './FormField'
 export { InlineAlert } from './InlineAlert'
