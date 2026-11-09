@@ -45,7 +45,20 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["api", "config"]
+known-first-party = [
+    "ai",
+    "api",
+    "checks",
+    "common",
+    "config",
+    "incidents",
+    "monitors",
+    "notifications",
+    "playground",
+    "stats",
+    "status_pages",
+    "users",
+]
 
 [tool.ruff.format]
 quote-style = "double"

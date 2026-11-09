@@ -1,12 +1,16 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   server: {
     port: 5173,
-    // В dev проксируем API на Django, чтобы не упираться в CORS
+    // Proxy API to Django in dev to avoid CORS
     proxy: {
       '/api': 'http://localhost:8000',
       '/health': 'http://localhost:8000',
