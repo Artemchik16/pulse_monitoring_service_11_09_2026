@@ -16,7 +16,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project
 
 COPY . .
-RUN DEBUG=false SECRET_KEY=collectstatic-only \
+# Placeholder key: collectstatic signs nothing, but production settings require a long key
+RUN DEBUG=false SECRET_KEY=collectstatic-build-placeholder-not-used-at-runtime-0000000000 \
     /app/.venv/bin/python manage.py collectstatic --noinput
 
 

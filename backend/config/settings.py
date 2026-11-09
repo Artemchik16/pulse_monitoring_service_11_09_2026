@@ -4,6 +4,7 @@ from pathlib import Path
 
 import environ
 from corsheaders.defaults import default_headers
+from django.core.exceptions import ImproperlyConfigured
 
 # Base app path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,6 +14,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     # Main environ
     DEBUG=(bool, False),
+    # Production only (DEBUG=false): the site is served over HTTPS -> redirect, HSTS, secure cookies.
+    # false only to run the production build locally over plain http://
+    HTTPS_ONLY=(bool, True),
     SECRET_KEY=(str, "django-insecure-local-dev-only-change-me"),
     ADMIN_PAGE_LOCATION=(str, "admin/"),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
@@ -310,9 +314,25 @@ CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 # Production security
 #########################
 if not DEBUG:
+    # A forgotten env var must not ship JWTs signed with a key that is in the repository
+    if SECRET_KEY.startswith("django-insecure") or len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured(
+            "Set a random SECRET_KEY of at least 50 characters when DEBUG=false"
+        )
+
+    # TLS is terminated by the hosting proxy; trust its scheme header
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    if env("HTTPS_ONLY"):
+        SECURE_SSL_REDIRECT = True
+        # Platform health checks often call plain http:// inside the network
+        SECURE_REDIRECT_EXEMPT = [r"^health$"]
+        SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+        # includeSubDomains / preload commit the whole domain; on free hosting the app lives on
+        # someone else's subdomain (*.onrender.com etc.), so that is not ours to decide
+        SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
 #########################
 
 # Project settings

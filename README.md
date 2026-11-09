@@ -39,6 +39,42 @@ cd backend && uv sync && uv run python manage.py migrate && uv run python manage
 cd frontend && nvm use && npm install && npm run dev     # http://localhost:5173
 ```
 
+## Docker-образы для хостинга (C2)
+
+| | backend (`backend/Dockerfile`) | frontend (`frontend/Dockerfile`) |
+|---|---|---|
+| Сборка | multi-stage: зависимости ставит `uv sync --locked --no-dev`, `collectstatic` на этапе сборки | multi-stage: `npm ci` + `vite build` на Node |
+| Runtime | `python:3.12-slim` только с `.venv` и кодом | `nginx-unprivileged`: статика + прокси на backend |
+| Dev-зависимости | нет (pytest, ruff, тесты в образ не попадают) | нет Node, исходников и `node_modules` |
+| Пользователь | `app` (uid 999), не root | `nginx` (uid 101), не root |
+| `.dockerignore` | `backend/.dockerignore`: `.env`, `.venv`, тесты, кэши | `frontend/.dockerignore`: `.env`, `node_modules`, e2e |
+| Старт | `deploy/entrypoint.sh`: migrate → демо-пользователь → демо-данные → gunicorn | nginx на :8080 |
+
+Размер: backend ~254 МБ, frontend ~49 МБ.
+
+## Секреты и конфигурация (C3)
+
+- **В репозитории нет секретов, в том числе в истории коммитов.** `.env` никогда не попадал в git
+  (`backend/.env`, `frontend/.env` в `.gitignore` и `.dockerignore`); история проверена поиском
+  ключей, токенов и паролей — нашлись только намеренные значения: пароль демо-аккаунта (его нужно
+  сдать по ТЗ), заглушка `change-me` в `.env.example` и пароль из тестов. Учётные данные БД в
+  `docker-compose.yml` (`pulse/pulse`) — только для локальной базы; на хостинге `DATABASE_URL`
+  задаётся в его настройках.
+- **Вся конфигурация — переменные окружения**, на хостинге — через его настройки. Все переменные
+  с описанием — в `backend/.env.example` и `frontend/.env.example`.
+- **DEBUG на хостинге выключен:** значение по умолчанию — `false`; включается только явно в
+  локальном `.env`.
+- **При `DEBUG=false` приложение защищено от ошибок конфигурации:**
+  - не стартует со стандартным dev-ключом или `SECRET_KEY` короче 50 символов — забытая
+    переменная не приведёт к JWT, подписанным известным ключом;
+  - `HTTPS_ONLY=true` (по умолчанию): редирект на HTTPS (кроме `/health` для проверок платформы),
+    HSTS на год, secure-cookie; TLS терминирует прокси хостинга (`X-Forwarded-Proto`);
+  - только JSON-ответы, даже 404/500 — без отладочных страниц Django;
+  - `manage.py check --deploy` проходит без замечаний (HSTS `includeSubDomains`/`preload`
+    сознательно не включены: на бесплатном хостинге домен не наш).
+- Попробовать production-сборку локально по `http://`: `DEBUG=false`, `HTTPS_ONLY=false`
+  и длинный `SECRET_KEY` в `backend/.env`.
+
 ## Ключевые решения
 
 ### Аутентификация (A1)

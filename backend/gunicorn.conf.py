@@ -2,6 +2,8 @@
 
 bind = "0.0.0.0:8000"
 workers = 1
+# The app runs as a non-root user and cannot write to /app (owned by root); keep the socket in /tmp
+control_socket = "/tmp/gunicorn.ctl"
 # RequestIdMiddleware writes a JSON access line with request_id; avoid a second plain-text one
 accesslog = None
 errorlog = "-"
