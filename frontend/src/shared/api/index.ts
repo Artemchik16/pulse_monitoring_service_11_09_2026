@@ -1,5 +1,6 @@
 export { apiClient } from './client'
 export { ApiError, type FieldErrors, toApiError } from './errors'
+export type { Paginated } from './types'
 export {
   endSession,
   getTokens,

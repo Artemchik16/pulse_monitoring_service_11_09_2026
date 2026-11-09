@@ -26,3 +26,9 @@ PERIODS: dict[str, dict] = {
 BUCKET_ORIGIN = datetime(2000, 1, 1, tzinfo=UTC)
 
 P95 = 0.95
+
+# Dashboard summary (one row per monitor): 24h uptime and an hourly sparkline
+SUMMARY_WINDOW = timedelta(hours=24)
+SUMMARY_BUCKET = timedelta(hours=1)
+# Short: the dashboard polls it, and status must not look stale for long
+SUMMARY_CACHE_TTL_SEC = 15

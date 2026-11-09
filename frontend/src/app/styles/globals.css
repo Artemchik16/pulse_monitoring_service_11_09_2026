@@ -78,6 +78,8 @@ html.dark {
   --error-surface: color-mix(in srgb, var(--error-base) 8%, transparent);
 
   --field-fill: var(--card);
+  --chip-active-fill: color-mix(in srgb, var(--brand-base) 14%, transparent);
+  --chip-active-ink: var(--primary-ink);
   --skeleton: color-mix(in srgb, var(--foreground) 8%, transparent);
   --overlay: #000000;
 
@@ -149,6 +151,9 @@ html.dark {
   --error-ink: var(--error-hover);
 
   --field-fill: var(--surface-sunken);
+  /* --primary-ink is 3.76:1 on the dark chip; the lighter brand step clears 5.13:1 */
+  --chip-active-fill: color-mix(in srgb, var(--brand-base) 22%, var(--muted));
+  --chip-active-ink: #f3956a;
 
   --cta-fill: linear-gradient(180deg, var(--brand-base), var(--brand-active));
   --cta-edge: rgb(255 255 255 / 0.16);
@@ -187,6 +192,8 @@ html.dark {
   --color-overlay: var(--overlay);
   --color-skeleton: var(--skeleton);
   --color-field: var(--field-fill);
+  --color-chip-active: var(--chip-active-fill);
+  --color-chip-active-foreground: var(--chip-active-ink);
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);

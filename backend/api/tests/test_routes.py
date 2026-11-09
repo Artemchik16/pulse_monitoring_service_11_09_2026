@@ -11,6 +11,7 @@ ROUTES = [
     ("/api/v1/monitors", "api:monitors:monitor-list", {}),
     ("/api/v1/monitors/7", "api:monitors:monitor-detail", {"pk": 7}),
     ("/api/v1/monitors/7/stats", "api:stats:monitor-stats", {"monitor_id": 7}),
+    ("/api/v1/monitors/summary", "api:stats:monitors-summary", {}),
     ("/api/v1/incidents", "api:incidents:incident-list", {}),
     ("/api/v1/incidents/3", "api:incidents:incident-detail", {"pk": 3}),
     ("/api/docs", "swagger-docs", {}),

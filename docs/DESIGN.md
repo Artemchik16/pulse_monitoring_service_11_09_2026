@@ -197,6 +197,11 @@ Numbers in metrics use `tabular-nums`.
 - The password eye is a 44px target with an `aria-label`.
 - Labels are always visible (no placeholder-as-label).
 
+**FilterChip** (status filter on the dashboard). `bg-muted` at rest; active is
+`--chip-active-fill` under `--chip-active-ink` (light: brand 14% under `--primary-ink`, 5.10:1;
+dark: brand 22% over `--muted` under `#F3956A`, 5.13:1). A toggle: `aria-pressed`; the chip row is
+`role="group"` with an `aria-label`. Scrolls horizontally on phones instead of wrapping.
+
 **InlineAlert.** Tone wash + ink + icon, `role="alert"` for errors. Used for form-level errors and
 notices ("Сессия истекла, войдите снова").
 

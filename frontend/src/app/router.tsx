@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-router'
 
 import { LoginPage, loginSearchSchema, meQueryOptions, RegisterPage } from '@/modules/auth'
-import { DashboardPage } from '@/modules/monitors'
+import { DashboardPage, dashboardSearchSchema } from '@/modules/monitors'
 import { ApiError, isAuthenticated, sessionStore } from '@/shared/api'
 
 import { AppShell } from './layout/AppShell'
@@ -72,6 +72,7 @@ const appRoute = createRoute({
 const dashboardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/',
+  validateSearch: dashboardSearchSchema,
   component: DashboardPage,
 })
 

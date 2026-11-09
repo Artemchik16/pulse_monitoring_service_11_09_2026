@@ -10,7 +10,7 @@ import { server } from './server'
 // jsdom has no scrolling; the router's scroll restoration calls it
 window.scrollTo = () => {}
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 
 afterEach(() => {
   cleanup()

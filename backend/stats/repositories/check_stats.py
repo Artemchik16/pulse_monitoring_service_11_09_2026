@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any
 
+from django.db import connection
 from django.db.models import (
     Aggregate,
     Avg,
@@ -73,6 +74,52 @@ class CheckStatsRepository:
             )
             .order_by("bucket")
         )
+
+    def series_for_monitors(
+        self, *, monitor_ids: list[int], since: datetime, bucket: timedelta, origin: datetime
+    ) -> list[dict[str, Any]]:
+        """Per-monitor, per-bucket totals and average response time (one query for many monitors)."""
+
+        succeeded = Q(ok=True)
+        return list(
+            CheckResult.objects.filter(monitor_id__in=monitor_ids, checked_at__gte=since)
+            .order_by()
+            .annotate(bucket=DateBin(F("checked_at"), stride=bucket, origin=origin))
+            .values("monitor_id", "bucket")
+            .annotate(
+                total=Count("ok"),
+                succeeded=Count("ok", filter=succeeded),
+                avg_response_ms=Avg("response_time_ms", filter=succeeded),
+            )
+            .order_by("monitor_id", "bucket")
+        )
+
+    def latest_for_monitors(self, *, monitor_ids: list[int]) -> dict[int, dict[str, Any]]:
+        """The most recent check of each monitor, keyed by monitor id.
+
+        LATERAL + LIMIT 1 reads one index entry per monitor; DISTINCT ON would walk the whole
+        history of every monitor.
+        """
+
+        if not monitor_ids:
+            return {}
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT m.id, c.checked_at, c.ok, c.status_code, c.response_time_ms, c.error_code
+                FROM unnest(%(ids)s::bigint[]) AS m(id)
+                CROSS JOIN LATERAL (
+                    SELECT checked_at, ok, status_code, response_time_ms, error_code
+                    FROM checks_checkresult
+                    WHERE monitor_id = m.id
+                    ORDER BY checked_at DESC
+                    LIMIT 1
+                ) AS c
+                """,
+                {"ids": monitor_ids},
+            )
+            columns = ("checked_at", "ok", "status_code", "response_time_ms", "error_code")
+            return {row[0]: dict(zip(columns, row[1:], strict=True)) for row in cursor.fetchall()}
 
     @staticmethod
     def _window(*, monitor_id: int, since: datetime):

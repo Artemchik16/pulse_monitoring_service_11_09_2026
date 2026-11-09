@@ -5,11 +5,10 @@ import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
 import { setTokens } from '@/shared/api'
+import { signIn } from '@/test/fixtures'
 import { server } from '@/test/server'
 
 import { App } from './App'
-
-const ME = { id: 1, email: 'owner@example.com', created_at: '2026-11-09T00:00:00Z' }
 
 function renderAt(path: string) {
   const history = createMemoryHistory({ initialEntries: [path] })
@@ -27,8 +26,7 @@ describe('route guards', () => {
   })
 
   it('shows the app to a signed-in user', async () => {
-    setTokens({ access: 'a1', refresh: 'r1' })
-    server.use(http.get('/api/v1/auth/me', () => HttpResponse.json(ME)))
+    signIn()
 
     renderAt('/')
 
@@ -60,11 +58,8 @@ describe('route guards', () => {
   })
 
   it('logs out back to the login page', async () => {
-    setTokens({ access: 'a1', refresh: 'r1' })
-    server.use(
-      http.get('/api/v1/auth/me', () => HttpResponse.json(ME)),
-      http.post('/api/v1/auth/logout', () => new HttpResponse(null, { status: 204 })),
-    )
+    signIn()
+    server.use(http.post('/api/v1/auth/logout', () => new HttpResponse(null, { status: 204 })))
     renderAt('/')
 
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Выйти' }))
@@ -74,8 +69,7 @@ describe('route guards', () => {
   })
 
   it('keeps a signed-in user away from the login page', async () => {
-    setTokens({ access: 'a1', refresh: 'r1' })
-    server.use(http.get('/api/v1/auth/me', () => HttpResponse.json(ME)))
+    signIn()
 
     renderAt('/login')
 
