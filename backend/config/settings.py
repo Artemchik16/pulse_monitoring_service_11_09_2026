@@ -199,7 +199,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_PAGINATION_CLASS": "common.pagination.DefaultPagination",
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "common.openapi.PulseAutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.unified_exception_handler",
     "DEFAULT_THROTTLE_RATES": {"auth": "20/min"},
 }
@@ -209,10 +209,30 @@ REST_FRAMEWORK = {
 #########################
 SPECTACULAR_SETTINGS = {
     "TITLE": "Pulse API",
-    "DESCRIPTION": "Сервис мониторинга доступности сайтов и API",
+    "DESCRIPTION": """
+Сервис мониторинга доступности сайтов и API.
+
+**Авторизация.** JWT: получите пару токенов через `POST /api/v1/auth/login`
+(или `register`), нажмите **Authorize** и вставьте `access`. Access живёт 15 минут,
+обновляется через `POST /api/v1/auth/refresh`.
+
+**Ошибки** всегда в одном формате:
+`{"error": {"code": "...", "message": "...", "fields": {...}}}`;
+`fields` есть только у ошибок валидации (`422`).
+
+**Списки** постраничные: `?page=2&page_size=50` (по умолчанию 20, максимум 100).
+
+Пользователь видит и меняет только свои мониторы и инциденты: чужие отдают `404`.
+""".strip(),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "TAGS": [
+        {"name": "Auth", "description": "Регистрация, вход, обновление токена, выход"},
+        {"name": "Monitors", "description": "Мониторы: CRUD, пагинация, фильтр по статусу"},
+        {"name": "Stats", "description": "Uptime, время ответа и график за 24h / 7d / 30d"},
+        {"name": "Incidents", "description": "Инциденты: открываются и закрываются проверками"},
+    ],
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "persistAuthorization": True,

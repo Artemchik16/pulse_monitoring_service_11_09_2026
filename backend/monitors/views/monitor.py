@@ -13,26 +13,35 @@ from monitors.repositories import MonitorRepository
 from monitors.serializers import MonitorInputSerializer, MonitorOutputSerializer
 from monitors.services import MonitorService
 
-_VALIDATION_ERROR = OpenApiResponse(description="Validation error")
-_NOT_FOUND = OpenApiResponse(description="Monitor not found")
-
 
 @extend_schema_view(
-    list=extend_schema(responses=MonitorOutputSerializer(many=True)),
-    retrieve=extend_schema(responses={200: MonitorOutputSerializer, 404: _NOT_FOUND}),
+    list=extend_schema(
+        summary="Список мониторов",
+        description="Свои мониторы, новые первыми. Фильтры: `status` (можно несколько), "
+        "`is_active`, `is_public`.",
+        responses={200: MonitorOutputSerializer(many=True), 422: OpenApiResponse()},
+    ),
+    retrieve=extend_schema(summary="Монитор", responses=MonitorOutputSerializer),
     create=extend_schema(
+        summary="Создать монитор",
+        description="URL только http/https и только на публичные адреса (проверяется DNS-резолв). "
+        "Интервал 60–3600 с, таймаут меньше интервала, не больше 20 мониторов на пользователя.",
         request=MonitorInputSerializer,
-        responses={201: MonitorOutputSerializer, 422: _VALIDATION_ERROR},
+        responses={201: MonitorOutputSerializer},
     ),
     update=extend_schema(
+        summary="Заменить монитор",
         request=MonitorInputSerializer,
-        responses={200: MonitorOutputSerializer, 404: _NOT_FOUND, 422: _VALIDATION_ERROR},
+        responses=MonitorOutputSerializer,
     ),
     partial_update=extend_schema(
+        summary="Изменить монитор",
+        description="`is_active=false` ставит монитор на паузу (`PAUSED`), "
+        "`is_active=true` возобновляет проверки (`PENDING`, проверка сразу).",
         request=MonitorInputSerializer,
-        responses={200: MonitorOutputSerializer, 404: _NOT_FOUND, 422: _VALIDATION_ERROR},
+        responses=MonitorOutputSerializer,
     ),
-    destroy=extend_schema(responses={204: None, 404: _NOT_FOUND}),
+    destroy=extend_schema(summary="Удалить монитор", description="Вместе с историей проверок."),
 )
 @extend_schema(tags=["Monitors"])
 class MonitorViewSet(

@@ -31,8 +31,10 @@ class AuthBaseView(APIView):
 
 @extend_schema(
     tags=["Auth"],
+    summary="Регистрация",
+    description="Создаёт аккаунт и сразу выдаёт пару токенов.",
     request=RegisterInputSerializer,
-    responses={201: AuthOutputSerializer, 422: OpenApiResponse(description="Validation error")},
+    responses={201: AuthOutputSerializer},
 )
 class RegisterView(AuthBaseView):
     """Register a new account."""
@@ -50,8 +52,12 @@ class RegisterView(AuthBaseView):
 
 @extend_schema(
     tags=["Auth"],
+    summary="Вход",
     request=LoginInputSerializer,
-    responses={200: AuthOutputSerializer, 401: OpenApiResponse(description="Invalid credentials")},
+    responses={
+        200: AuthOutputSerializer,
+        401: OpenApiResponse(description="Неверный email или пароль"),
+    },
 )
 class LoginView(AuthBaseView):
     """Sign in with email and password."""
@@ -68,8 +74,13 @@ class LoginView(AuthBaseView):
 
 @extend_schema(
     tags=["Auth"],
+    summary="Обновить токены",
+    description="Выдаёт новую пару; старый refresh сразу отзывается (повторно не сработает).",
     request=RefreshInputSerializer,
-    responses={200: TokenPairOutputSerializer, 401: OpenApiResponse(description="Invalid token")},
+    responses={
+        200: TokenPairOutputSerializer,
+        401: OpenApiResponse(description="Refresh-токен недействителен, истёк или уже использован"),
+    },
 )
 class RefreshView(AuthBaseView):
     """Exchange a refresh token for a new rotated pair."""
@@ -86,8 +97,10 @@ class RefreshView(AuthBaseView):
 
 @extend_schema(
     tags=["Auth"],
+    summary="Выход",
+    description="Отзывает refresh-токен текущей сессии. Access истекает сам не позже чем через 15 минут.",
     request=RefreshInputSerializer,
-    responses={204: None, 401: OpenApiResponse(description="Invalid token")},
+    responses={204: None},
 )
 class LogoutView(AuthBaseView):
     """Revoke the refresh token of the current session."""

@@ -10,9 +10,13 @@ from incidents.serializers import IncidentOutputSerializer
 
 
 @extend_schema_view(
-    retrieve=extend_schema(
-        responses={200: IncidentOutputSerializer, 404: OpenApiResponse(description="Not found")}
+    list=extend_schema(
+        summary="Список инцидентов",
+        description="Инциденты своих мониторов, новые первыми. "
+        "Фильтры: `monitor` (id монитора), `is_open`.",
+        responses={200: IncidentOutputSerializer(many=True), 422: OpenApiResponse()},
     ),
+    retrieve=extend_schema(summary="Инцидент", responses=IncidentOutputSerializer),
 )
 @extend_schema(tags=["Incidents"])
 class IncidentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):

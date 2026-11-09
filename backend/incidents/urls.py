@@ -5,6 +5,6 @@ from incidents.views import IncidentViewSet
 app_name = "incidents"
 
 router = SimpleRouter(trailing_slash=False)
-router.register("", IncidentViewSet, basename="incident")
+router.register("incidents", IncidentViewSet, basename="incident")
 
 urlpatterns = router.urls

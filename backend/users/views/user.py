@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from users.serializers import UserOutputSerializer
 
 
-@extend_schema(tags=["Auth"], responses={200: UserOutputSerializer})
+@extend_schema(tags=["Auth"], summary="Текущий пользователь", responses=UserOutputSerializer)
 class MeView(APIView):
     """Current authenticated user."""
 

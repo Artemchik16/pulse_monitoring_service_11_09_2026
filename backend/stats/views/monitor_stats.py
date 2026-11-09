@@ -9,12 +9,12 @@ from stats.services import MonitorStatsService
 
 @extend_schema(
     tags=["Stats"],
+    summary="Статистика монитора",
+    description="Uptime, среднее время ответа и p95, число инцидентов и временной ряд для графика. "
+    "Шаг ряда: 15 минут для `24h`, 1 час для `7d`, 6 часов для `30d`; интервалы без проверок — "
+    "точки с `null`. Ответ кэшируется на 1 / 5 / 15 минут соответственно.",
     parameters=[MonitorStatsQuerySerializer],
-    responses={
-        200: MonitorStatsOutputSerializer,
-        404: OpenApiResponse(description="Monitor not found"),
-        422: OpenApiResponse(description="Invalid period"),
-    },
+    responses={200: MonitorStatsOutputSerializer, 422: OpenApiResponse()},
 )
 class MonitorStatsView(APIView):
     """Uptime, response time (avg, p95), incident count and chart series of a monitor."""
