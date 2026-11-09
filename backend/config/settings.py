@@ -26,6 +26,7 @@ env = environ.Env(
     # JWT environ
     JWT_ACCESS_TOKEN_LIFETIME_MIN=(int, 15),
     JWT_REFRESH_TOKEN_LIFETIME_DAYS=(int, 7),
+    AUTH_THROTTLE_RATE=(str, "20/min"),
     # Monitoring environ
     INTERNAL_TICK_TOKEN=(str, ""),
     # AI environ
@@ -77,6 +78,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_beat",
     # Project apps
+    "common.apps.CommonConfig",
+    "users.apps.UsersConfig",
     "api.apps.ApiConfig",
 ]
 #########################
@@ -133,8 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
-# TODO: кастомная модель пользователя (email вместо username) — задать до первой миграции
-# AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "users.User"
 #########################
 
 # Internationalization
@@ -207,7 +209,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # TODO: единый формат ошибок (ТЗ A2) — кастомный EXCEPTION_HANDLER
+    "EXCEPTION_HANDLER": "common.exceptions.unified_exception_handler",
+    "DEFAULT_THROTTLE_RATES": {"auth": env("AUTH_THROTTLE_RATE")},
 }
 #########################
 
@@ -235,7 +238,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=env("JWT_REFRESH_TOKEN_LIFETIME_DAYS")),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
-    "UPDATE_LAST_LOGIN": True,
+    "UPDATE_LAST_LOGIN": False,
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }

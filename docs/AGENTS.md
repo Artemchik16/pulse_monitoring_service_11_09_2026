@@ -92,6 +92,9 @@ monitors/
     __init__.py
     monitor.py          # MonitorViewSet
   permissions.py        # only if module-specific
+  throttling/
+    __init__.py         # explicit re-exports
+    auth.py             # AuthRateThrottle — all module throttles live here
   filters.py            # django-filter FilterSets
   tasks.py              # Celery tasks — thin wrappers calling services
   urls.py
@@ -111,6 +114,7 @@ Create only the files a module actually needs (YAGNI). Small modules may use fla
 | `serializers` | Input validation (shape, ranges), output projection                                  | DB writes                                       |
 | `views`       | HTTP adaptation: auth, permissions, throttling, call service/repository, status codes, OpenAPI | Business rules, ORM                     |
 | `tasks`       | Celery entry points → call one service method                                        | Business logic                                  |
+| `throttling`  | Rate-limit classes (`<Name>RateThrottle`), rates come from settings/env              | Business rules, inline `throttle_scope` in views |
 
 Typical flow: **validate (serializer) → orchestrate (service) → persist (repository) → respond (view)**.
 
@@ -333,7 +337,7 @@ Priority when unsure: **module/layer fit → KISS / match neighbours → WET ove
 3. Repository methods for new queries/writes, scoped by `owner_id`.
 4. Service method for rules, transactions, side effects.
 5. Input/output serializers — no DB writes.
-6. View: permissions, throttles, status codes, `@extend_schema`; route in module `urls.py`.
+6. View: permissions, throttles (classes from the module's `throttling/` package), status codes, `@extend_schema`; route in module `urls.py`.
 7. Tests: service rules + API contract.
 
 **Frontend**

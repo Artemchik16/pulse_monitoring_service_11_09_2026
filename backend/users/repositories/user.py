@@ -1,0 +1,20 @@
+from users.models import User
+
+
+class UserRepository:
+    """User database operations."""
+
+    def exists_by_email(self, *, email: str) -> bool:
+        """Check whether a User with the email exists."""
+
+        return User.objects.filter(email=email).exists()
+
+    def find_active_by_id(self, *, user_id: int) -> User | None:
+        """Find an active User by ID."""
+
+        return User.objects.filter(id=user_id, is_active=True).first()
+
+    def create(self, *, email: str, password: str) -> User:
+        """Create a User with a hashed password."""
+
+        return User.objects.create_user(email=email, password=password)
