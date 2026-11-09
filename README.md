@@ -384,3 +384,39 @@ Execution Time: 11.214 ms
   - `429` — у эндпоинтов с ограничением частоты (`/auth/*`).
 - Схема собирается без предупреждений (`manage.py spectacular --validate --fail-on-warn`);
   это и наличие описаний у всех операций проверяют тесты.
+
+### Health-check и логи (A9)
+
+**`GET /health`** (без авторизации, `Cache-Control: no-store`) проверяет PostgreSQL (`SELECT 1`)
+и Redis (`PING`) и отвечает `200` или `503`:
+
+```json
+{"status": "ok", "checks": {"database": {"status": "ok", "latency_ms": 0.7},
+                            "redis": {"status": "ok", "latency_ms": 3.2}}}
+```
+
+- У каждой проверки короткий таймаут (Redis 2 с, подключение к БД 5 с), поэтому `/health`
+  не зависает, когда зависимость недоступна.
+- Причина сбоя (хост, текст ошибки драйвера) пишется только в лог, в ответ попадает лишь
+  `"status": "error"`: эндпоинт публичный.
+
+**Логи — JSON, одна запись на строку, в каждой есть `request_id`:**
+
+```json
+{"level": "INFO", "logger": "pulse.access", "request_id": "3725e6e4e1c640cdaea5eebfb3179f2e",
+ "message": "GET /health 200", "method": "GET", "path": "/health", "status_code": 200,
+ "duration_ms": 9.7, "user_id": null, "timestamp": "2026-11-09T16:28:36.111+00:00"}
+```
+
+- `RequestIdMiddleware` стоит первым: берёт `X-Request-ID` из запроса (если он короткий и без
+  опасных символов, например от балансировщика) или генерирует новый, кладёт его в contextvar и
+  возвращает в заголовке ответа `X-Request-ID` (открыт для фронтенда через CORS).
+- `RequestIdFilter` добавляет `request_id` к **каждой** записи — Django, DRF, наших модулей
+  и сторонних библиотек.
+- В задачах Celery `request_id` — это id задачи (сигналы `task_prerun`/`task_postrun`); вне запроса
+  и задачи (старт процесса) поле есть со значением `null`.
+- Access log пишет middleware (метод, путь, код ответа, длительность, `user_id`); текстовые
+  access-логи gunicorn и runserver отключены, чтобы не было дублей.
+- gunicorn (`gunicorn.conf.py`) и Celery (`setup_logging`) используют тот же JSON-формат, время —
+  ISO 8601 в UTC у всех процессов. Python `warnings` тоже уходят в лог (`captureWarnings`).
+- Celery запускается с `--quiet`, чтобы не печатать ASCII-баннер.

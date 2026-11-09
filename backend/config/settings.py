@@ -1,7 +1,9 @@
+import logging
 from datetime import timedelta
 from pathlib import Path
 
 import environ
+from corsheaders.defaults import default_headers
 
 # Base app path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,6 +81,8 @@ INSTALLED_APPS = [
 # Middlewares
 #########################
 MIDDLEWARE = [
+    # First: every log line of the request, including errors in other middleware, has an id
+    "common.middleware.RequestIdMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -114,6 +118,8 @@ TEMPLATES = [
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+# Fail fast instead of hanging requests and /health when the database is unreachable
+DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 5
 #########################
 
 # Auth / passwords (argon2 — медленный хеш по ТЗ A1)
@@ -163,23 +169,38 @@ CACHES = {
 # Logging (JSON, request_id добавляется middleware — TODO)
 #########################
 LOG_LEVEL = env("LOG_LEVEL")
+# Python warnings go through logging (JSON) instead of raw stderr lines
+logging.captureWarnings(True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "request_id": {"()": "common.logging.RequestIdFilter"},
+    },
     "formatters": {
         "json": {
             "()": "pythonjsonlogger.json.JsonFormatter",
-            "fmt": "%(asctime)s %(levelname)s %(name)s %(message)s",
-            "rename_fields": {"asctime": "timestamp", "levelname": "level", "name": "logger"},
+            "fmt": "%(levelname)s %(name)s %(request_id)s %(message)s",
+            "rename_fields": {"levelname": "level", "name": "logger"},
+            # ISO 8601 in UTC from the record itself: same clock in gunicorn, Django and Celery
+            "timestamp": True,
+            "json_ensure_ascii": False,
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "json"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["request_id"],
+        },
     },
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
         "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        # Access log is written by RequestIdMiddleware (JSON, with request_id)
+        "django.server": {"handlers": [], "propagate": False},
         "celery": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "gunicorn.error": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
     },
 }
 #########################
@@ -227,11 +248,17 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Several components have a "status" field with different choice sets
+    "ENUM_NAME_OVERRIDES": {
+        "MonitorStatusEnum": "monitors.choices.MonitorStatusChoices",
+        "HealthStatusEnum": ["ok", "error"],
+    },
     "TAGS": [
         {"name": "Auth", "description": "Регистрация, вход, обновление токена, выход"},
         {"name": "Monitors", "description": "Мониторы: CRUD, пагинация, фильтр по статусу"},
         {"name": "Stats", "description": "Uptime, время ответа и график за 24h / 7d / 30d"},
         {"name": "Incidents", "description": "Инциденты: открываются и закрываются проверками"},
+        {"name": "Health", "description": "Проверка работоспособности (БД, Redis)"},
     ],
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
@@ -272,6 +299,9 @@ CELERY_BEAT_SCHEDULE = {
 # CORS / CSRF (только домен фронтенда — ТЗ B1)
 #########################
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
+# Frontend can read the id to show it in error screens and send its own
+CORS_EXPOSE_HEADERS = ("X-Request-ID",)
+CORS_ALLOW_HEADERS = (*default_headers, "x-request-id")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 #########################
 

@@ -1,4 +1,9 @@
+from django.urls import path
+
+from common.views import HealthView
+
 app_name = "base"
 
-# Корневые урлы: /health, /internal/tick, /badge/{slug}.svg и т.п.
-urlpatterns = []
+urlpatterns = [
+    path("health", HealthView.as_view(), name="health"),
+]
