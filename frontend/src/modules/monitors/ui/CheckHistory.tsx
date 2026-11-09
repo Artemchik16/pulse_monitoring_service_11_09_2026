@@ -2,7 +2,7 @@ import { ListChecks } from 'lucide-react'
 
 import { toApiError } from '@/shared/api'
 import { cn } from '@/shared/lib/cn'
-import { formatDateTime, formatMs } from '@/shared/lib/format'
+import { formatDateTime, formatMs, formatShortDateTime } from '@/shared/lib/format'
 import { Card, EmptyState, ErrorState, Pagination } from '@/shared/ui'
 
 import { useMonitorChecks } from '../api/hooks'
@@ -10,12 +10,14 @@ import { CHECKS_PAGE_SIZE } from '../api/monitorsApi'
 import { failureLabel } from '../model/checkErrors'
 import type { CheckResult } from '../model/types'
 
-const ROW = 'grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 md:grid-cols-[11rem_1fr_4.5rem_5.5rem]'
+const ROW = 'grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 md:grid-cols-[8rem_1fr_4.5rem_5.5rem]'
 
 function CheckRow({ check }: { check: CheckResult }) {
   return (
     <li className={cn(ROW, 'py-2.5')}>
-      <span className="text-caption text-muted-foreground tabular-nums">{formatDateTime(check.checked_at)}</span>
+      <span className="text-caption text-muted-foreground tabular-nums" title={formatDateTime(check.checked_at)}>
+        {formatShortDateTime(check.checked_at)}
+      </span>
       <span className="flex min-w-0 items-center gap-2 justify-self-end md:justify-self-start">
         <span className={cn('size-2 shrink-0 rounded-full', check.ok ? 'bg-success' : 'bg-destructive')} aria-hidden />
         <span className={cn('truncate text-caption font-medium', check.ok ? 'text-foreground' : 'text-error-ink')} title={check.error || undefined}>

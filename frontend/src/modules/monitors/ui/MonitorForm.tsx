@@ -202,7 +202,7 @@ export function MonitorForm({ initialValues, submitLabel, onSubmit, onSuccess, o
       </Section>
 
       <Section title="Настройки">
-        <div className="flex flex-col divide-y divide-border">
+        <div className="flex flex-col divide-y divide-border [&>*]:py-2">
           <form.Field name="is_active">
             {(field) => (
               <Switch

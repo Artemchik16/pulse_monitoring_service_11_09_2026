@@ -35,20 +35,22 @@ function Content({ page }: { page: PublicStatusPageData }) {
             {page.monitors.map((monitor) => (
               <li
                 key={monitor.name}
-                className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-3 py-3 sm:grid-cols-[1fr_auto_5.5rem_5.5rem]"
+                // Phones: name on its own line, a wrapping row of status + uptime under it.
+                // From sm the inner row is display:contents, so its items become table cells.
+                className="flex flex-col gap-1.5 px-3 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_5.5rem_5.5rem] sm:items-center sm:gap-x-4"
               >
-                <span className="min-w-0 truncate text-body font-semibold" title={monitor.name}>
-                  {monitor.name}
-                </span>
-                <MonitorStatusBadge status={monitor.status} className="justify-self-end sm:justify-self-start" />
-                <span className="text-caption text-muted-foreground tabular-nums sm:text-right">
-                  <span className="sm:hidden">Uptime 24 ч: </span>
-                  <span className="font-semibold text-foreground">{formatPercent(monitor.uptime_24h)}</span>
-                </span>
-                <span className="justify-self-end text-caption text-muted-foreground tabular-nums sm:text-right">
-                  <span className="sm:hidden">30 дн: </span>
-                  <span className="font-semibold text-foreground">{formatPercent(monitor.uptime_30d)}</span>
-                </span>
+                <span className="min-w-0 text-body font-semibold [overflow-wrap:anywhere]">{monitor.name}</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:contents">
+                  <MonitorStatusBadge status={monitor.status} className="mr-auto sm:mr-0 sm:justify-self-start" />
+                  <span className="text-caption whitespace-nowrap text-muted-foreground tabular-nums sm:text-right">
+                    <span className="sm:hidden">24 ч: </span>
+                    <span className="font-semibold text-foreground">{formatPercent(monitor.uptime_24h)}</span>
+                  </span>
+                  <span className="text-caption whitespace-nowrap text-muted-foreground tabular-nums sm:text-right">
+                    <span className="sm:hidden">30 дн: </span>
+                    <span className="font-semibold text-foreground">{formatPercent(monitor.uptime_30d)}</span>
+                  </span>
+                </div>
               </li>
             ))}
           </ul>

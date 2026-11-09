@@ -43,7 +43,7 @@ export function StatusPagesPage() {
   let body
   if (pages.isPending) {
     body = (
-      <div className="grid gap-4 md:grid-cols-2" role="status" aria-label="Загрузка">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2" role="status" aria-label="Загрузка">
         {[0, 1].map((index) => (
           <div key={index} className="h-32 rounded-(--radius-card) bg-skeleton motion-safe:animate-pulse" />
         ))}
@@ -63,7 +63,7 @@ export function StatusPagesPage() {
     )
   } else {
     body = (
-      <ul className="grid gap-4 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {pages.data.map((page) => (
           <li key={page.id}>
             <Card className="flex h-full flex-col gap-4 p-4">
@@ -73,9 +73,9 @@ export function StatusPagesPage() {
                   href={`/status/${page.slug}`}
                   target="_blank"
                   rel="noopener"
-                  className="inline-flex w-fit max-w-full items-center gap-1 truncate text-caption text-primary-ink hover:underline"
+                  className="inline-flex w-fit max-w-full min-w-0 items-center gap-1 text-caption text-primary-ink hover:underline"
                 >
-                  {publicStatusUrl(page.slug)}
+                  <span className="truncate">{publicStatusUrl(page.slug)}</span>
                   <ExternalLink className="size-3.5 shrink-0" aria-hidden />
                 </a>
                 <p className="text-micro text-muted-foreground">Мониторов: {page.monitor_ids.length}</p>

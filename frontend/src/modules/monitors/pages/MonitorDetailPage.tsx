@@ -33,7 +33,7 @@ export function MonitorDetailPage() {
 
       <MonitorStatsSection monitorId={monitorId} period={period} onPeriodChange={setPeriod} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <MonitorIncidentsSection monitorId={monitorId} />
         <CheckHistory monitorId={monitorId} page={page} onPageChange={setPage} />
       </div>

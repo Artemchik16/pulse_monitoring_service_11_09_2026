@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 
 import { toApiError } from '@/shared/api'
 import { formatMs, formatPercent } from '@/shared/lib/format'
-import { Card, ErrorState, SegmentedControl } from '@/shared/ui'
+import { Button, Card, ErrorBoundary, ErrorState, SegmentedControl } from '@/shared/ui'
 
 import { useMonitorStats } from '../api/hooks'
 import { PERIOD_OPTIONS, type StatsPeriod } from '../model/types'
@@ -26,6 +26,17 @@ function uptimeTone(uptime: number | null) {
 }
 
 const chartSkeleton = <div className="h-full rounded-(--radius-field) bg-skeleton motion-safe:animate-pulse" />
+
+// The chart chunk failed to load (network, or an old chunk after a new deploy). React.lazy keeps
+// the failed import, so only a reload can fetch it again; the numbers above stay usable.
+const chartFailed = (
+  <div className="flex h-full flex-col items-center justify-center gap-3 rounded-(--radius-field) bg-surface-sunken px-4 text-center" role="alert">
+    <p className="text-caption text-muted-foreground">Не удалось показать график.</p>
+    <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+      Обновить страницу
+    </Button>
+  </div>
+)
 
 export function MonitorStatsSection({ monitorId, period, onPeriodChange }: MonitorStatsSectionProps) {
   const stats = useMonitorStats(monitorId, period)
@@ -76,9 +87,11 @@ export function MonitorStatsSection({ monitorId, period, onPeriodChange }: Monit
           <div className="mt-5 h-56 sm:h-72">
             {data ? (
               data.checks_total ? (
-                <Suspense fallback={chartSkeleton}>
-                  <ResponseTimeChart points={data.series} withDate={period !== '24h'} />
-                </Suspense>
+                <ErrorBoundary fallback={() => chartFailed}>
+                  <Suspense fallback={chartSkeleton}>
+                    <ResponseTimeChart points={data.series} withDate={period !== '24h'} />
+                  </Suspense>
+                </ErrorBoundary>
               ) : (
                 <div className="flex h-full items-center justify-center rounded-(--radius-field) bg-surface-sunken text-caption text-muted-foreground">
                   За этот период проверок ещё не было

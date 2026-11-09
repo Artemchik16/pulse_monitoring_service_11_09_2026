@@ -4,6 +4,7 @@ import { type RouterHistory, RouterProvider } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { sessionStore } from '@/shared/api'
+import { OfflineBanner } from '@/shared/ui'
 
 import { createQueryClient } from './queryClient'
 import { createAppRouter } from './router'
@@ -25,6 +26,7 @@ export function App({ history }: { history?: RouterHistory }) {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <OfflineBanner />
       <ReactQueryDevtools buttonPosition="bottom-left" />
     </QueryClientProvider>
   )

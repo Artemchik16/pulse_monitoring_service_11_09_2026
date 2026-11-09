@@ -50,37 +50,37 @@ export function MonitorCard({ monitor, summaryLoading }: MonitorCardProps) {
         monitor.status === 'PAUSED' && 'opacity-75',
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <h2 className="truncate text-body font-semibold text-foreground" title={monitor.name}>
-            {/* Stretched link: the whole card opens the monitor page */}
-            <Link
-              to="/monitors/$monitorId"
-              params={{ monitorId: monitor.id }}
-              data-card-link
-              className="rounded-(--radius-card) after:absolute after:inset-0 after:content-['']"
-            >
-              {monitor.name}
-            </Link>
-          </h2>
-          <p className="truncate text-micro text-muted-foreground" title={monitor.url}>
-            <span className="font-semibold">{monitor.method}</span> {monitor.url}
-          </p>
-        </div>
-        <div className="relative -mt-1.5 -mr-1.5 flex shrink-0 items-center gap-1">
-          <MonitorStatusBadge status={monitor.status} />
+      {/* Status first: it is what the dashboard is for; name and URL get the full width */}
+      <div className="-mt-1.5 -mr-1.5 flex items-center justify-between gap-3">
+        <MonitorStatusBadge status={monitor.status} />
+        <Link
+          to="/monitors/$monitorId/edit"
+          params={{ monitorId: monitor.id }}
+          className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'relative')}
+          aria-label={`Изменить «${monitor.name}»`}
+        >
+          <Pencil />
+        </Link>
+      </div>
+      <div className="-mt-2 flex min-w-0 flex-col gap-0.5">
+        <h2 className="truncate text-body font-semibold text-foreground" title={monitor.name}>
+          {/* Stretched link: the whole card opens the monitor page */}
           <Link
-            to="/monitors/$monitorId/edit"
+            to="/monitors/$monitorId"
             params={{ monitorId: monitor.id }}
-            className={buttonVariants({ variant: 'ghost', size: 'icon' })}
-            aria-label={`Изменить «${monitor.name}»`}
+            data-card-link
+            className="rounded-(--radius-card) after:absolute after:inset-0 after:content-['']"
           >
-            <Pencil />
+            {monitor.name}
           </Link>
-        </div>
+        </h2>
+        <p className="truncate text-micro text-muted-foreground" title={monitor.url}>
+          <span className="font-semibold">{monitor.method}</span> {monitor.url}
+        </p>
       </div>
 
-      <dl className="grid grid-cols-3 gap-3">
+      {/* The last column fits «1 мин. назад»; the first two share the rest */}
+      <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3">
         {summaryLoading ? (
           <>
             <MetricSkeleton label="Ответ" />
@@ -93,6 +93,7 @@ export function MonitorCard({ monitor, summaryLoading }: MonitorCardProps) {
               label="Ответ"
               value={failed ? failureLabel(last) : formatMs(last?.response_time_ms)}
               tone={failed ? 'error' : undefined}
+              title={failed ? failureLabel(last) : undefined}
             />
             <Metric label="Uptime 24 ч" value={formatPercent(summary?.uptime_24h)} />
             <Metric

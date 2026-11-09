@@ -42,7 +42,7 @@ describe('DashboardPage', () => {
     expect(within(cards[1]).getByText('Работает')).toBeInTheDocument()
     expect(within(cards[1]).getByText('123 мс')).toBeInTheDocument()
     expect(within(cards[1]).getByText('99,5 %')).toBeInTheDocument()
-    expect(within(cards[1]).getByText('2 минуты назад')).toBeInTheDocument()
+    expect(within(cards[1]).getByText('2 мин. назад')).toBeInTheDocument()
     expect(within(cards[1]).getByRole('img', { name: /Время ответа «Сайт»/ })).toBeInTheDocument()
     expect(screen.getByText('2 из 20')).toBeInTheDocument()
   })

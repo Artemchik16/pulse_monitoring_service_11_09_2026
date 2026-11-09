@@ -3,7 +3,8 @@ const LOCALE = 'ru-RU'
 const integer = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 })
 const seconds = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 })
 const percent = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 })
-const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' })
+// Short style: «2 мин. назад» fits a phone column, «2 минуты назад» does not
+const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto', style: 'short' })
 
 const DASH = '—'
 
@@ -19,7 +20,7 @@ export function formatPercent(value: number | null | undefined): string {
   return `${percent.format(value)} %`
 }
 
-/** «только что», «5 минут назад», «вчера» */
+/** «только что», «5 мин. назад», «3 ч назад», «вчера» */
 export function formatRelative(iso: string | null | undefined, now: Date = new Date()): string {
   if (!iso) return DASH
   const diffSec = Math.round((new Date(iso).getTime() - now.getTime()) / 1000)
@@ -55,4 +56,17 @@ export function formatAxisTick(iso: string, withDate: boolean): string {
     ? { day: '2-digit', month: '2-digit' }
     : { hour: '2-digit', minute: '2-digit' }
   return new Intl.DateTimeFormat(LOCALE, options).format(new Date(iso))
+}
+
+/** Compact moment for lists: «22:19» today, «9 нояб., 22:19» this year, full date otherwise. */
+export function formatShortDateTime(iso: string | null | undefined, now: Date = new Date()): string {
+  if (!iso) return DASH
+  const date = new Date(iso)
+  const sameDay = date.toDateString() === now.toDateString()
+  const options: Intl.DateTimeFormatOptions = sameDay
+    ? { hour: '2-digit', minute: '2-digit' }
+    : date.getFullYear() === now.getFullYear()
+      ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
+      : { dateStyle: 'medium', timeStyle: 'short' }
+  return new Intl.DateTimeFormat(LOCALE, options).format(date)
 }

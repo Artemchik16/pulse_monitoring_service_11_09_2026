@@ -23,7 +23,8 @@ export function Pagination({ page, pageCount, onChange, disabled }: PaginationPr
         Назад
       </Button>
       <span className="text-caption text-muted-foreground tabular-nums" aria-live="polite">
-        Страница {page} из {pageCount}
+        <span className="sr-only sm:not-sr-only">Страница </span>
+        {page} из {pageCount}
       </span>
       <Button
         variant="outline"

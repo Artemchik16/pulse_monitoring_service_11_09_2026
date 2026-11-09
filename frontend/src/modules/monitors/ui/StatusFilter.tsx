@@ -34,6 +34,8 @@ export function StatusFilter({ value, counts, total, onChange }: StatusFilterPro
     <div
       role="group"
       aria-label="Фильтр по статусу"
+      // Scrolls sideways on phones by design (DESIGN.md: FilterChip)
+      data-allow-overflow
       className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0"
     >
       <Chip active={!value} onClick={() => onChange(undefined)}>

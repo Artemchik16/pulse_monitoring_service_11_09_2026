@@ -96,6 +96,8 @@ pip-delete-this-directory.txt
 ### Frontend ###
 node_modules/
 /frontend/dist/
+/frontend/test-results/
+/frontend/playwright-report/
 /frontend/.env
 /frontend/.env.local
 !.env.example

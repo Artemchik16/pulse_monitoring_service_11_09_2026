@@ -2,7 +2,7 @@ import type { SeriesPoint } from '../model/types'
 
 const WIDTH = 100
 const HEIGHT = 32
-const PADDING_Y = 3
+const PADDING_Y = 4
 
 interface SparklineProps {
   points: SeriesPoint[]
@@ -10,8 +10,8 @@ interface SparklineProps {
 }
 
 /**
- * 24h mini chart: response time line (gaps where there were no checks) and a red tick under every
- * hour that had failed checks. Inline SVG: a chart library would cost more than the dashboard.
+ * 24h mini chart: response time line (gaps where there were no checks) over a time axis where
+ * hours with failed checks are red. Inline SVG: a chart library would cost more than the dashboard.
  */
 export function Sparkline({ points, label }: SparklineProps) {
   const values = points.map((point) => point.avg_response_ms)
@@ -69,14 +69,16 @@ export function Sparkline({ points, label }: SparklineProps) {
           />
         )
       })}
+      {/* Time axis: grey track, failed hours painted red */}
+      <rect x={0} y={HEIGHT - 1.5} width={WIDTH} height={1.5} className="fill-border-strong" />
       {points.map((point, index) =>
         point.uptime_pct != null && point.uptime_pct < 100 ? (
           <rect
             key={point.ts}
-            x={Math.max(index * step - 0.8, 0)}
-            y={HEIGHT - 1.5}
-            width={1.6}
-            height={1.5}
+            x={Math.max(index * step - step / 2, 0)}
+            y={HEIGHT - 2}
+            width={Math.max(step, 1.5)}
+            height={2}
             className="fill-destructive"
           />
         ) : null,

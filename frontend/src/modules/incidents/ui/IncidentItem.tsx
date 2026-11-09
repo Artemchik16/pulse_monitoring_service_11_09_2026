@@ -1,5 +1,5 @@
 import { cn } from '@/shared/lib/cn'
-import { formatDateTime, formatDuration } from '@/shared/lib/format'
+import { formatDateTime, formatDuration, formatShortDateTime } from '@/shared/lib/format'
 
 import { incidentDurationSec } from '../model/duration'
 import type { Incident } from '../model/types'
@@ -22,9 +22,12 @@ export function IncidentItem({ incident }: { incident: Incident }) {
           {incident.is_open ? `уже ${duration}` : `простой ${duration}`}
         </span>
       </div>
-      <p className="text-caption text-muted-foreground">
-        {formatDateTime(incident.started_at)}
-        {incident.resolved_at ? ` — ${formatDateTime(incident.resolved_at)}` : ''}
+      <p
+        className="text-caption text-muted-foreground tabular-nums"
+        title={`${formatDateTime(incident.started_at)}${incident.resolved_at ? ` — ${formatDateTime(incident.resolved_at)}` : ''}`}
+      >
+        {formatShortDateTime(incident.started_at)}
+        {incident.resolved_at ? ` — ${formatShortDateTime(incident.resolved_at)}` : ''}
       </p>
       {incident.cause ? <p className="text-caption text-foreground">Причина: {incident.cause}</p> : null}
     </li>

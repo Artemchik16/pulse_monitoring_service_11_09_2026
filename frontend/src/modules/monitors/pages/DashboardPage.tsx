@@ -13,7 +13,8 @@ import { StatusFilter } from '../ui/StatusFilter'
 
 const route = getRouteApi('/app/')
 
-const GRID = 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3'
+// grid-cols-1 = minmax(0, 1fr): without it the single phone column grows to the longest URL
+const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'
 
 /** The view's one CTA; at the quota it turns into a disabled button that says why. */
 function AddMonitorButton({ atLimit }: { atLimit: boolean }) {

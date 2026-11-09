@@ -99,10 +99,10 @@ describe('MonitorDetailPage', () => {
     )
     const history = renderAt('/monitors/7')
 
-    expect(await screen.findByText('Страница 1 из 3')).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Страницы' })).toHaveTextContent('Страница 1 из 3')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Вперёд' }))
 
-    expect(await screen.findByText('Страница 2 из 3')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Страницы' })).toHaveTextContent('Страница 2 из 3'))
     expect(await screen.findByText('Код 503')).toBeInTheDocument()
     expect(history.location.search).toContain('page=2')
     expect(pages).toEqual(['1', '2'])
