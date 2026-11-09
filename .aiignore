@@ -1,5 +1,6 @@
 ### --- Secrets & Environment --- ###
-.env
+backend/.env
+frontend/.env
 
 ### --- Database & Storage --- ###
 backend/db.sqlite3

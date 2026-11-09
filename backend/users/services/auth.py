@@ -35,7 +35,6 @@ class AuthService:
             with transaction.atomic():
                 user = self._user_repository.create(email=email, password=password)
         except IntegrityError:
-            # Concurrent registration with the same email
             raise EmailAlreadyRegistered() from None
         return user, self._issue_tokens(user=user)
 
