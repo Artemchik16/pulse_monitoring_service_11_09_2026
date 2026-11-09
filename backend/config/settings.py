@@ -20,6 +20,8 @@ env = environ.Env(
     SECRET_KEY=(str, "django-insecure-local-dev-only-change-me"),
     ADMIN_PAGE_LOCATION=(str, "admin/"),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
+    # Public hostname (ngrok domain, hosting domain): added to ALLOWED_HOSTS and CSRF origins
+    PUBLIC_HOST=(str, ""),
     # Database environ
     DATABASE_URL=(str, "postgres://pulse:pulse@127.0.0.1:5432/pulse"),
     # Redis environ (cache + Celery broker)
@@ -323,6 +325,13 @@ CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 CORS_EXPOSE_HEADERS = ("X-Request-ID",)
 CORS_ALLOW_HEADERS = (*default_headers, "x-request-id")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
+
+PUBLIC_HOST = env("PUBLIC_HOST").strip().lower()
+if PUBLIC_HOST:
+    # ".ngrok-free.app" = any subdomain: a free tunnel gets a new random one on every start
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, PUBLIC_HOST]
+    csrf_host = f"*{PUBLIC_HOST}" if PUBLIC_HOST.startswith(".") else PUBLIC_HOST
+    CSRF_TRUSTED_ORIGINS = [*CSRF_TRUSTED_ORIGINS, f"https://{csrf_host}"]
 #########################
 
 # Production security

@@ -27,6 +27,8 @@
 /backend/MANIFEST
 
 ### --- Environment & Secrets --- ###
+# Root .env: docker compose variables (public tunnel host)
+/.env
 /backend/.ENV
 /backend/.env
 /backend/.env.local

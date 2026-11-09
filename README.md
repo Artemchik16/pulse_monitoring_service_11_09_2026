@@ -8,8 +8,21 @@
 Одной командой (нужен только Docker):
 
 ```bash
-docker compose up --build
+docker compose up --build      # или: make up
 ```
+
+Короткие команды — в корневом `Makefile` (`make` выводит список):
+
+| Команда | Что делает |
+|---|---|
+| `make up` / `make down` | поднять / остановить всё |
+| `make run-demo` | публичный показ: `DEBUG=false` → стек → ссылка ngrok (Ctrl+C закрывает ссылку) |
+| `make tunnel` | только ссылка ngrok к уже запущенному стеку |
+| `make debug-off` / `make debug-on` | production-режим для показа / обратно к разработке на localhost |
+| `make restart`, `make rebuild` | перезапуск после правки `backend/.env` / после изменений кода |
+| `make ps`, `make logs`, `make logs-backend` | состояние и логи |
+| `make seed` | досоздать демо-данные |
+| `make test`, `make lint` | тесты и линтеры backend и frontend |
 
 - **Приложение:** http://localhost:8080
 - **Демо-аккаунт:** `demo@pulse.app` / `DemoPulse2026!` — мониторы Pleazy, EnterEdu, AgroGo,
@@ -38,6 +51,27 @@ docker compose up -d db redis
 cd backend && uv sync && uv run python manage.py migrate && uv run python manage.py runserver
 cd frontend && nvm use && npm install && npm run dev     # http://localhost:5173
 ```
+
+## Публичная ссылка с этого компьютера (ngrok)
+
+ТЗ допускает показ со своего компьютера. Туннель запускается на хосте, рядом со стеком:
+
+```bash
+docker compose up -d --build
+ngrok http 8080            # → https://<случайный-поддомен>.ngrok-free.app
+```
+
+- Туннель ведёт на frontend (nginx), который проксирует API — всё приложение на одном адресе.
+  Мониторы и Celery работают внутри compose и туннеля не касаются.
+- В корневом `.env` (образец — `.env.example`) `PUBLIC_HOST=.ngrok-free.app`: точка в начале
+  разрешает любой поддомен — бесплатный ngrok выдаёт новый при каждом запуске, и ничего
+  перенастраивать не нужно. Значение попадает в `ALLOWED_HOSTS` и `CSRF_TRUSTED_ORIGINS`
+  (`https://*.ngrok-free.app`).
+- nginx передаёт backend'у `X-Forwarded-Proto` от ngrok: Django знает, что снаружи HTTPS.
+- Пока приложение открыто в интернет, рекомендуется `DEBUG=false` в `backend/.env` (тогда
+  http://localhost:8080 редиректит на HTTPS — пользуйтесь ссылкой ngrok).
+- Ограничения: компьютер должен быть включён; бесплатный ngrok при первом заходе показывает
+  страницу-предупреждение «Visit Site».
 
 ## Docker-образы для хостинга (C2)
 
