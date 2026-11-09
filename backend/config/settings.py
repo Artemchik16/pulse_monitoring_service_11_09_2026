@@ -245,6 +245,7 @@ CELERY_TASK_IGNORE_RESULT = True
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULE = {
     "dispatch-due-checks": {"task": "checks.dispatch_due_checks", "schedule": 15.0},
+    "purge-old-checks": {"task": "checks.purge_old_checks", "schedule": 60 * 60.0},
 }
 #########################
 

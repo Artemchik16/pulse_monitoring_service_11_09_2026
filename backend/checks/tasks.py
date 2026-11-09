@@ -1,7 +1,7 @@
 from celery import shared_task
 
 from checks.constants import CHECK_LOCK_MARGIN_SEC
-from checks.services import CheckService, SchedulerService
+from checks.services import CheckService, RetentionService, SchedulerService
 from monitors.constants import MAX_TIMEOUT_MS
 
 
@@ -21,3 +21,10 @@ def run_check(monitor_id: int) -> None:
     """Worker entry point: check one monitor."""
 
     CheckService().run(monitor_id=monitor_id)
+
+
+@shared_task(name="checks.purge_old_checks", ignore_result=True)
+def purge_old_checks() -> int:
+    """Beat entry point: delete check history older than the retention window."""
+
+    return RetentionService().purge().deleted

@@ -14,6 +14,28 @@ class CheckResultRepository:
 
         return CheckResult.objects.create(monitor_id=monitor_id, **fields)
 
+    def delete_older_than(self, *, monitor_id: int, before: datetime, limit: int) -> int:
+        """Delete up to `limit` rows of a monitor checked before the moment; return the count.
+
+        The id list is computed once (InitPlan) through the (monitor_id, checked_at) index and
+        rows are deleted through the primary key. A plain `id IN (SELECT ... LIMIT n)` makes the
+        planner hash-join against a sequential scan of the whole table on every batch.
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM checks_checkresult
+                WHERE id = ANY(ARRAY(
+                    SELECT id FROM checks_checkresult
+                    WHERE monitor_id = %(monitor_id)s AND checked_at < %(before)s
+                    LIMIT %(limit)s
+                ))
+                """,
+                {"monitor_id": monitor_id, "before": before, "limit": limit},
+            )
+            return cursor.rowcount
+
     def generate_synthetic_history(
         self,
         *,

@@ -29,6 +29,11 @@ class MonitorRepository:
 
         return Monitor.objects.select_for_update().filter(id=monitor_id).first()
 
+    def list_all_ids(self) -> list[int]:
+        """IDs of all Monitors, active or not (system use: maintenance tasks)."""
+
+        return list(Monitor.objects.order_by("id").values_list("id", flat=True))
+
     def claim_due(self, *, now: datetime, limit: int) -> list[Monitor]:
         """Claim due active Monitors: lock them and move next_check_at one interval ahead.
 

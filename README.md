@@ -308,3 +308,62 @@ uv run python manage.py explain_stats <monitor_id> --period 30d   # EXPLAIN (ANA
 - альтернативные записи IP (`http://2130706433/`, `http://0x7f000001/`, `http://127.1/`) и публичные
   домены, указывающие на loopback (например, `localtest.me → ::1`), отсекаются, потому что
   проверяется результат резолва, а не строка URL.
+
+### Хранение истории (A7)
+
+Записи `check_results` старше **30 дней** удаляет задача `checks.purge_old_checks`,
+которую Celery beat запускает **раз в час**. Частый запуск держит пачки маленькими: за час
+у монитора с интервалом в минуту устаревает около 60 записей.
+
+**Без долгих блокировок:**
+
+- удаление идёт **пачками по 5000 строк**; каждая пачка — один `DELETE` в своей короткой
+  транзакции (autocommit). Блокируются только удаляемые строки, таблица целиком не блокируется,
+  а старые строки никто не обновляет, поэтому конфликтов с новыми проверками нет;
+- между пачками пауза 50 мс, чтобы живые записи и autovacuum успевали;
+- один запуск ограничен 4 минутами, остаток подберёт следующий запуск;
+- два запуска одновременно не идут (блокировка в Redis через `cache.add`);
+- пачки выбираются **по монитору** через уже существующий индекс `(monitor_id, checked_at)`.
+  Отдельный индекс по `checked_at` не нужен: он замедлял бы каждую вставку и занимал бы место,
+  а объём бесплатной базы ограничен.
+
+Форма запроса важна:
+
+```sql
+DELETE FROM checks_checkresult
+WHERE id = ANY(ARRAY(
+    SELECT id FROM checks_checkresult
+    WHERE monitor_id = $1 AND checked_at < $2
+    LIMIT 5000
+));
+```
+
+Обычный `WHERE id IN (SELECT ... LIMIT 5000)` планировщик выполняет как Hash Semi Join
+с **полным Seq Scan таблицы на каждой пачке** (103 мс на 1 млн строк, растёт вместе с таблицей).
+С `ARRAY(...)` список id считается один раз (InitPlan) по составному индексу, а удаление
+идёт по первичному ключу:
+
+```
+Delete on checks_checkresult (actual time=11.080..11.082 rows=0 loops=1)
+  InitPlan 1 (returns $0)
+    ->  Limit (actual time=0.938..3.960 rows=5000 loops=1)
+          ->  Bitmap Heap Scan on checks_checkresult checks_checkresult_1 (actual time=0.937..3.716 rows=5000 loops=1)
+                Recheck Cond: ((monitor_id = 5) AND (checked_at < (now() - '20 days'::interval)))
+                ->  Bitmap Index Scan on check_monitor_checked_idx (actual time=0.746..0.746 rows=11112 loops=1)
+                      Index Cond: ((monitor_id = 5) AND (checked_at < (now() - '20 days'::interval)))
+  ->  Index Scan using checks_checkresult_pkey on checks_checkresult (actual time=4.397..9.357 rows=5000 loops=1)
+        Index Cond: (id = ANY ($0))
+Execution Time: 11.214 ms
+```
+
+Замер на 1 000 000 записей за 45 дней (треть старше 30 дней), во время очистки параллельно
+пишутся новые проверки:
+
+| | `id IN (SELECT …)` | `id = ANY(ARRAY(…))` |
+|---|---|---|
+| Удалено | 333 320 строк, 80 пачек | 333 320 строк, 80 пачек |
+| Весь запуск | 9,0 с | 4,0 с |
+| Пачка: медиана / p95 / максимум | 71 / 97 / 127 мс | 11 / 16 / 22 мс |
+| Параллельная вставка: медиана / максимум | 1,3 / 13,7 мс | 1,3 / 19,2 мс |
+
+Инциденты не удаляются: их мало, и они нужны для истории и статус-страницы.

@@ -9,3 +9,13 @@ USER_AGENT = "PulseMonitor/1.0 (+uptime checker)"
 
 # Extra seconds the per-monitor lock outlives the probe timeout
 CHECK_LOCK_MARGIN_SEC = 30
+
+# History retention: rows older than this are purged by the hourly task
+RETENTION_DAYS = 30
+# Rows deleted per statement: each batch is a short transaction with row locks only
+PURGE_BATCH_SIZE = 5000
+# Pause between batches so live writes, autovacuum and replicas keep up
+PURGE_BATCH_PAUSE_SEC = 0.05
+# One run stops after this long; the rest is picked up by the next run
+PURGE_TIME_BUDGET_SEC = 4 * 60
+PURGE_LOCK_KEY = "checks:purge:lock"
