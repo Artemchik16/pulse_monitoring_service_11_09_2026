@@ -14,7 +14,7 @@ migrate:
 
 ### Background tasks ###
 start-celery-worker:
-	uv run celery -A config worker --loglevel=info --concurrency=4
+	uv run celery -A config worker --loglevel=info --pool=threads --concurrency=20
 start-celery-beat:
 	uv run celery -A config beat --loglevel=info
 

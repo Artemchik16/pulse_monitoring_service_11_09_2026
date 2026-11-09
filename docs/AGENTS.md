@@ -98,6 +98,9 @@ monitors/
   filters/
     __init__.py
     monitor.py          # MonitorFilter (django-filter)
+  clients/              # adapters to the outside world (HTTP probe, Telegram, LLM) — no ORM
+    __init__.py
+    http_probe.py       # HttpProbe
   views/
     __init__.py
     monitor.py          # MonitorViewSet
