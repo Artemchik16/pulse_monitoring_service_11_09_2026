@@ -5,7 +5,7 @@ The repository is a monorepo:
 
 ```
 backend/    Django 5.2 + DRF, PostgreSQL, Redis, Celery (managed by uv)
-frontend/   React 19 + TypeScript + Vite
+frontend/   React 19 + TypeScript + Vite, Tailwind v4, TanStack (Router, Query, Form, Store)
 docs/       TZ, design, this guide
 ```
 
@@ -250,14 +250,15 @@ make lint / make format / make test
 ```
 src/
   app/                    # composition root
-    providers.tsx         # QueryClientProvider, Router, auth provider
-    router.tsx            # route table, guards (private / public)
-    layout/               # app shell, navigation
-    styles/               # global css, tokens
+    App.tsx               # QueryClientProvider + RouterProvider, reacts to session end
+    queryClient.ts        # TanStack Query defaults (no retry on 4xx)
+    router.tsx            # TanStack Router route table, guards (guest-only / auth)
+    layout/               # AppShell, route error/pending/not-found states
+    styles/globals.css    # design tokens (docs/DESIGN.md)
   shared/                 # domain-agnostic, imports nothing from modules/
-    api/                  # axios client, token refresh interceptor, ApiError type
-    ui/                   # Button, Input, Spinner, EmptyState, ErrorState, StatusBadge…
-    lib/                  # formatters (duration, ms, %), helpers
+    api/                  # axios client, session store, token refresh, ApiError
+    ui/                   # Button, Input, FormField, Card, InlineAlert, Loading/Empty/ErrorState…
+    lib/                  # cn(), theme store, form helpers (server errors -> fields), formatters
     config/               # env (import.meta.env.VITE_*)
   modules/                # one folder per domain module, mirrors backend
     auth/
@@ -294,9 +295,18 @@ Dependency direction: `app → modules → shared`. Inside a module: `pages → 
 
 - Import another module **only via its `index.ts`** (`import { MonitorStatusBadge } from '@/modules/monitors'`); never deep-import its internals.
 - `shared/` never imports from `modules/` or `app/`.
-- Server state = TanStack Query only. No copying server data into `useState`/context. Local UI state = `useState`.
-- Only `shared/api` knows about tokens and base URL. On `401` it refreshes once, retries, otherwise redirects to `/login` — no white screen (TZ B1).
-- Backend validation errors (`error.fields`) are mapped onto form fields (TZ B3) via a shared helper.
+- **TanStack everywhere:** routing — TanStack Router (code-based route table in `app/router.tsx`;
+  module pages read params via `getRouteApi('/path')`); server state — TanStack Query only (no
+  copying server data into `useState`/context); forms — TanStack Form with a zod schema;
+  client-side global state — TanStack Store (`createStore` + `useSelector`). Local UI state = `useState`.
+- Only `shared/api` knows about tokens and base URL. On `401` it refreshes once (single-flight per
+  tab, `navigator.locks` across tabs — refresh tokens are single-use), retries, otherwise ends the
+  session as expired; the route guard sends the user to `/login` with a notice — no white screen (TZ B1).
+- Forms: `validators.onSubmit` = zod schema, `validators.onSubmitAsync` =
+  `submitWithServerErrors(mutation.mutateAsync, fields)` — backend `error.fields` land next to the
+  inputs and clear when the field is edited (TZ B3); `onSubmit` only navigates.
+- Styling: Tailwind v4 utilities over the tokens in `globals.css`; rules in `docs/DESIGN.md`
+  (no colour literals, one CTA per view, tone text via `*-ink`).
 - **Every screen handles loading, empty and error states** using `shared/ui` components (TZ B6). Layout must work on mobile.
 - **Never use `dangerouslySetInnerHTML`.** AI/model output is rendered as text or via `react-markdown` without raw HTML (TZ E3).
 - Polling/live updates via `refetchInterval` in query hooks, not ad-hoc `setInterval` (TZ D3).
@@ -316,8 +326,11 @@ nvm use          # Node 22 (.nvmrc)
 npm install
 npm run dev      # Vite on :5173, /api proxied to Django :8000
 npm run lint     # oxlint
+npm run test     # vitest + Testing Library + msw (API mocked at the network level)
 npm run build    # tsc + vite build
 ```
+
+Tests live next to the code (`*.test.ts(x)`); `src/test/` holds the msw server and render helpers.
 
 ---
 
