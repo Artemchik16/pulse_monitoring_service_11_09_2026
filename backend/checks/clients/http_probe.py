@@ -7,6 +7,8 @@ import httpx
 
 from checks import constants
 from checks.choices import CheckErrorChoices
+from checks.clients.safe_network_backend import SafeNetworkBackend
+from common.net import UnsafeTargetError
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,8 @@ class HttpProbe:
                     response_time_ms = self._elapsed_ms(started)
                     if method != "HEAD":
                         self._drain_body(response=response, deadline=deadline)
+        except UnsafeTargetError as exc:
+            return self._fail(CheckErrorChoices.BLOCKED_ADDRESS, str(exc))
         except _DeadlineExceeded:
             return self._fail(CheckErrorChoices.TIMEOUT, f"Нет полного ответа за {timeout_sec:g} с")
         except _BodyTooLarge:
@@ -99,8 +103,19 @@ class HttpProbe:
             follow_redirects=True,
             max_redirects=constants.MAX_REDIRECTS,
             headers={"User-Agent": constants.USER_AGENT},
-            transport=self._transport,
+            transport=self._transport or self._safe_transport(),
+            # Ignore HTTP(S)_PROXY from the environment: a proxy would bypass the IP check
+            trust_env=False,
         )
+
+    @staticmethod
+    def _safe_transport() -> httpx.HTTPTransport:
+        """Transport whose every TCP connection goes through the SSRF guard."""
+
+        transport = httpx.HTTPTransport()
+        # httpx does not expose network_backend; httpcore's pool does (versions pinned in uv.lock)
+        transport._pool._network_backend = SafeNetworkBackend()
+        return transport
 
     def _drain_body(self, *, response: httpx.Response, deadline: float) -> None:
         """Read the body up to the size limit, enforcing the total time budget."""

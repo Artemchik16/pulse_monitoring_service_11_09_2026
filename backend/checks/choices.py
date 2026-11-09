@@ -12,3 +12,4 @@ class CheckErrorChoices(models.TextChoices):
     TOO_MANY_REDIRECTS = "TOO_MANY_REDIRECTS", "Слишком много редиректов"
     BODY_TOO_LARGE = "BODY_TOO_LARGE", "Превышен размер ответа"
     INVALID_URL = "INVALID_URL", "Некорректный URL"
+    BLOCKED_ADDRESS = "BLOCKED_ADDRESS", "Запрещённый адрес"

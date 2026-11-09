@@ -3,6 +3,7 @@ from typing import Any
 from django.core.validators import URLValidator
 from rest_framework import serializers
 
+from common.net import HostResolutionError, UnsafeTargetError, ensure_public_url
 from monitors import constants
 from monitors.choices import HttpMethodChoices
 from monitors.models import Monitor
@@ -50,6 +51,14 @@ class MonitorInputSerializer(serializers.Serializer):
     )
     is_active = serializers.BooleanField(default=True)
     is_public = serializers.BooleanField(default=False)
+
+    def validate_url(self, value: str) -> str:
+        # SSRF guard on the resolved IPs, not just the URL string (checks re-validate at runtime)
+        try:
+            ensure_public_url(value)
+        except (UnsafeTargetError, HostResolutionError) as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        return value
 
     def validate_name(self, value: str) -> str:
         value = value.strip()

@@ -1,8 +1,11 @@
+import socket
+
 import pytest
 from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from common.tests.test_ssrf import PUBLIC_IP, fake_dns
 from monitors.choices import MonitorStatusChoices
 from monitors.constants import MAX_MONITORS_PER_USER
 from monitors.repositories import MonitorRepository
@@ -31,6 +34,17 @@ def _isolated_cache(settings):
 
     settings.CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def _fake_dns(monkeypatch):
+    """Deterministic DNS: tests never hit the network."""
+
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        fake_dns({"example.com": [PUBLIC_IP], "internal.example": ["10.0.0.5"]}),
+    )
 
 
 @pytest.fixture
@@ -81,6 +95,15 @@ class TestCreate:
             ({"interval_sec": 60, "timeout_ms": 60000}, "timeout_ms"),
             ({"expected_status_from": 300, "expected_status_to": 200}, "expected_status_to"),
             ({"name": "   "}, "name"),
+            # SSRF: internal targets by literal, by name and via DNS
+            ({"url": "http://127.0.0.1:8000/"}, "url"),
+            ({"url": "http://localhost/"}, "url"),
+            ({"url": "http://[::1]/"}, "url"),
+            ({"url": "http://169.254.169.254/latest/meta-data/"}, "url"),
+            ({"url": "http://192.168.1.1/"}, "url"),
+            ({"url": "http://metadata.google.internal/"}, "url"),
+            ({"url": "https://internal.example/"}, "url"),
+            ({"url": "https://no-such-host.example/"}, "url"),
         ],
     )
     def test_validation_errors_are_per_field(self, api_client, payload, field):
@@ -165,6 +188,16 @@ class TestDetail:
 
 
 class TestUpdate:
+    def test_patch_to_internal_url_is_rejected(self, api_client, user):
+        monitor = MonitorService().create(owner_id=user.id, name="m", url="https://a.example")
+
+        response = api_client.patch(
+            detail_url(monitor.id), {"url": "http://10.0.0.1/"}, format="json"
+        )
+
+        assert response.status_code == 422
+        assert "url" in response.data["error"]["fields"]
+
     def test_put_replaces_fields(self, api_client, user):
         monitor = MonitorService().create(owner_id=user.id, name="m", url="https://a.example")
 
