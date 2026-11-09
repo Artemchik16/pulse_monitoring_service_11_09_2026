@@ -31,6 +31,8 @@ class Monitor(models.Model):
         max_length=7, choices=MonitorStatusChoices.choices, default=MonitorStatusChoices.PENDING
     )
     consecutive_failures = models.PositiveIntegerField(default=0)
+    # When the current failure streak began: becomes the incident start time
+    failing_since = models.DateTimeField(null=True, blank=True)
     last_checked_at = models.DateTimeField(null=True, blank=True)
     next_check_at = models.DateTimeField(null=True, blank=True)
 

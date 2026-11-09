@@ -60,5 +60,6 @@ class MonitorService:
         return {
             "status": MonitorStatusChoices.PENDING,
             "consecutive_failures": 0,
+            "failing_since": None,
             "next_check_at": timezone.now(),
         }

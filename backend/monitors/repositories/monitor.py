@@ -24,6 +24,11 @@ class MonitorRepository:
 
         return Monitor.objects.filter(id=monitor_id, is_active=True).first()
 
+    def lock_by_id(self, *, monitor_id: int) -> Monitor | None:
+        """Lock a Monitor row until the end of the current transaction (system use)."""
+
+        return Monitor.objects.select_for_update().filter(id=monitor_id).first()
+
     def claim_due(self, *, now: datetime, limit: int) -> list[Monitor]:
         """Claim due active Monitors: lock them and move next_check_at one interval ahead.
 

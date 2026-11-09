@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "common.apps.CommonConfig",
     "users.apps.UsersConfig",
     "monitors.apps.MonitorsConfig",
+    "incidents.apps.IncidentsConfig",
     "checks.apps.ChecksConfig",
     "api.apps.ApiConfig",
 ]

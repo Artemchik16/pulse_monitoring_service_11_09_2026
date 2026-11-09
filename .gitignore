@@ -1,9 +1,9 @@
 ### Backend ###
 ### --- Python & Execution --- ###
 # Byte-compiled / optimized / DLL files
-/backend/__pycache__/
-/backend/*.py[cod]
-/backend/*$py.class
+/backend/**/__pycache__/
+/backend/**/*.py[cod]
+/backend/**/*$py.class
 /backend/*.py,cover
 /backend/.Python
 

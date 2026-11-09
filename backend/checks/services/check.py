@@ -1,10 +1,12 @@
 from django.core.cache import cache
+from django.db import transaction
 from django.utils import timezone
 
 from checks import constants
 from checks.clients import HttpProbe
 from checks.models import CheckResult
 from checks.repositories import CheckResultRepository
+from incidents.services import CheckOutcome, MonitorStateService
 from monitors.repositories import MonitorRepository
 
 
@@ -14,6 +16,7 @@ class CheckService:
     def __init__(self) -> None:
         self._monitor_repository = MonitorRepository()
         self._check_result_repository = CheckResultRepository()
+        self._monitor_state_service = MonitorStateService()
         self._http_probe = HttpProbe()
 
     def run(self, *, monitor_id: int) -> CheckResult | None:
@@ -38,16 +41,26 @@ class CheckService:
                 expected_status_from=monitor.expected_status_from,
                 expected_status_to=monitor.expected_status_to,
             )
-            result = self._check_result_repository.create(
-                monitor_id=monitor.id,
-                checked_at=checked_at,
-                ok=probe.ok,
-                status_code=probe.status_code,
-                response_time_ms=probe.response_time_ms,
-                error_code=probe.error_code,
-                error=probe.error,
-            )
-            self._monitor_repository.update(monitor=monitor, last_checked_at=checked_at)
+            # History row and monitor state change together or not at all
+            with transaction.atomic():
+                result = self._check_result_repository.create(
+                    monitor_id=monitor.id,
+                    checked_at=checked_at,
+                    ok=probe.ok,
+                    status_code=probe.status_code,
+                    response_time_ms=probe.response_time_ms,
+                    error_code=probe.error_code,
+                    error=probe.error,
+                )
+                self._monitor_state_service.apply_check(
+                    monitor_id=monitor.id,
+                    outcome=CheckOutcome(
+                        ok=probe.ok,
+                        checked_at=checked_at,
+                        error_code=probe.error_code,
+                        error=probe.error,
+                    ),
+                )
             return result
         finally:
             cache.delete(lock_key)
