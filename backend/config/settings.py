@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "monitors.apps.MonitorsConfig",
     "incidents.apps.IncidentsConfig",
     "checks.apps.ChecksConfig",
+    "stats.apps.StatsConfig",
     "api.apps.ApiConfig",
 ]
 #########################

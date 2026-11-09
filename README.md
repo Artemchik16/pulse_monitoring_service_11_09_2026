@@ -147,3 +147,128 @@ REST API `/api/v1/monitors` (JWT, пользователь видит и мен�
 
 API (только чтение, только свои мониторы): `GET /api/v1/incidents?monitor={id}&is_open=true`,
 `GET /api/v1/incidents/{id}`.
+
+### Статистика (A5)
+
+`GET /api/v1/monitors/{id}/stats?period=24h|7d|30d` (по умолчанию `24h`) возвращает:
+
+- `uptime_pct` — доля успешных проверок за период;
+- `avg_response_ms` и `p95_response_ms` — среднее и 95-й перцентиль времени ответа
+  (по успешным проверкам: у таймаутов и ошибок соединения времени ответа нет);
+- `incidents_count` — инциденты, которые были открыты в какой-то момент периода
+  (включая начавшиеся раньше и ещё не закрытые);
+- `series` — временной ряд для графика: uptime и среднее время ответа по интервалам.
+
+| Период | Интервал точки | Точек | TTL кэша |
+|--------|----------------|-------|----------|
+| `24h`  | 15 минут       | ~96   | 60 с     |
+| `7d`   | 1 час          | ~168  | 5 мин    |
+| `30d`  | 6 часов        | ~120  | 15 мин   |
+
+Интервалы без проверок отдаются явными точками с `null`, чтобы на графике был разрыв,
+а не ложная линия. Границы интервалов выровнены по часам (`date_bin` с фиксированной точкой отсчёта).
+
+#### Индексы
+
+```sql
+-- check_results: один составной покрывающий индекс
+CREATE INDEX check_monitor_checked_idx
+    ON checks_checkresult (monitor_id, checked_at DESC) INCLUDE (ok, response_time_ms);
+
+-- incidents
+CREATE INDEX incident_monitor_started_idx ON incidents_incident (monitor_id, started_at DESC);
+CREATE UNIQUE INDEX incident_one_open_per_monitor ON incidents_incident (monitor_id)
+    WHERE resolved_at IS NULL;
+```
+
+- Все запросы статистики фильтруют `monitor_id = ? AND checked_at >= ?`: это диапазон по
+  составному индексу, читаются только записи нужного монитора за нужный период.
+- `INCLUDE (ok, response_time_ms)` делает индекс **покрывающим**: всё, что нужно для агрегатов,
+  лежит в индексе, PostgreSQL отвечает через **Index Only Scan** и не читает таблицу
+  (`Heap Fetches: 0`). Поэтому подсчёт идёт по `COUNT(ok)`, а не по `COUNT(id)`: `id` в индексе нет.
+- Отдельный индекс внешнего ключа `monitor_id` отключён (`db_index=False`): его полностью покрывает
+  ведущая колонка составного индекса, а лишний индекс только замедлял бы вставку проверок.
+- Тот же индекс обслуживает историю проверок монитора («последние проверки», B4).
+
+#### EXPLAIN ANALYZE
+
+1 000 000 записей в `check_results` (20 мониторов × 50 000 проверок за 30 дней, записи
+мониторов перемешаны во времени, как в реальной работе), PostgreSQL 16, период `30d` —
+самый тяжёлый: агрегируются все 50 000 проверок монитора.
+
+Сводка (uptime, среднее, p95):
+
+```
+Aggregate  (cost=3353.09..3353.10 rows=1 width=56) (actual time=11.315..11.316 rows=1 loops=1)
+  Buffers: shared hit=446
+  ->  Index Only Scan using check_monitor_checked_idx on checks_checkresult  (cost=0.42..2738.99 rows=49128 width=5) (actual time=0.019..4.279 rows=50000 loops=1)
+        Index Cond: ((monitor_id = 5) AND (checked_at >= '2026-10-10 16:00:52.569753+00'::timestamp with time zone))
+        Heap Fetches: 0
+        Buffers: shared hit=446
+Planning Time: 0.043 ms
+Execution Time: 11.373 ms
+```
+
+Временной ряд (`date_bin` по 6 часов):
+
+```
+Sort  (cost=6189.20..6268.21 rows=31604 width=56) (actual time=10.411..10.415 rows=121 loops=1)
+  Sort Key: (date_bin('06:00:00'::interval, checked_at, '2000-01-01 00:00:00+00'::timestamp with time zone))
+  Sort Method: quicksort  Memory: 32kB
+  Buffers: shared hit=446
+  ->  HashAggregate  (cost=3353.09..3827.15 rows=31604 width=56) (actual time=10.239..10.380 rows=121 loops=1)
+        Group Key: date_bin('06:00:00'::interval, checked_at, '2000-01-01 00:00:00+00'::timestamp with time zone)
+        Batches: 1  Memory Usage: 1585kB
+        Buffers: shared hit=446
+        ->  Index Only Scan using check_monitor_checked_idx on checks_checkresult  (cost=0.42..2861.81 rows=49128 width=13) (actual time=0.030..5.053 rows=50000 loops=1)
+              Index Cond: ((monitor_id = 5) AND (checked_at >= '2026-10-10 16:00:52.569753+00'::timestamp with time zone))
+              Heap Fetches: 0
+              Buffers: shared hit=446
+Planning Time: 0.068 ms
+Execution Time: 10.932 ms
+```
+
+Количество инцидентов:
+
+```
+Aggregate  (cost=8.16..8.17 rows=1 width=8) (actual time=0.013..0.014 rows=1 loops=1)
+  ->  Index Scan using incident_monitor_started_idx on incidents_incident  (cost=0.14..8.16 rows=1 width=0) (actual time=0.012..0.012 rows=0 loops=1)
+        Index Cond: (monitor_id = 5)
+        Filter: ((resolved_at IS NULL) OR (resolved_at >= '2026-10-10 16:00:52.569753+00'::timestamp with time zone))
+Execution Time: 0.029 ms
+```
+
+Для `24h` те же запросы выполняются меньше чем за 1 мс (Index Only Scan по 1 667 записям).
+
+Время ответа всего эндпоинта (Django + сериализация, медиана из 10 запросов):
+
+| Период | Без кэша | Из кэша |
+|--------|----------|---------|
+| `24h`  | 13 мс    | 3 мс    |
+| `7d`   | 15 мс    | 3 мс    |
+| `30d`  | 26 мс    | 3 мс    |
+
+#### Кэширование
+
+Результат кэшируется в Redis на ключ `stats:monitor:{id}:{period}`:
+
+- данные меняются не чаще одной проверки в минуту (минимальный интервал), а дашборд и
+  страница монитора опрашивают статистику регулярно (D3) — без кэша каждый открытый экран
+  повторял бы одни и те же агрегаты;
+- TTL растёт с периодом: новая проверка заметно меняет картину за 24 часа, но почти не влияет
+  на 30-дневный график;
+- проверка владельца монитора выполняется **до** обращения к кэшу, поэтому чужую статистику
+  нельзя получить даже из кэша.
+
+#### Как воспроизвести
+
+```bash
+cd backend
+uv run python manage.py generate_check_history            # 1 000 000 записей, ~20 с
+uv run python manage.py explain_stats <monitor_id> --period 30d   # EXPLAIN (ANALYZE, BUFFERS)
+```
+
+`generate_check_history` создаёт пользователя `loadtest@example.com` с 20 неактивными мониторами
+и одним SQL-запросом (`generate_series`) вставляет историю: ~2% неудачных проверок, время ответа
+40–200 мс с редкими всплесками до 1,7 с. Параметры: `--rows`, `--monitors`, `--days`,
+`--failure-rate`.

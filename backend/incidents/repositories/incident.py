@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 
 from incidents.models import Incident
 
@@ -19,6 +19,13 @@ class IncidentRepository:
         return Incident.objects.select_related("monitor").get(
             id=incident_id, monitor__owner_id=owner_id
         )
+
+    def count_overlapping(self, *, monitor_id: int, since: datetime) -> int:
+        """Count incidents that were open at any moment since the given time."""
+
+        return Incident.objects.filter(
+            Q(resolved_at__isnull=True) | Q(resolved_at__gte=since), monitor_id=monitor_id
+        ).count()
 
     def find_open(self, *, monitor_id: int) -> Incident | None:
         """Find the open incident of a monitor."""

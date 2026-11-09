@@ -7,8 +7,9 @@ from checks.choices import CheckErrorChoices
 class CheckResult(models.Model):
     """Outcome of a single HTTP check of a monitor."""
 
+    # No separate FK index: the composite index below starts with monitor_id and serves it
     monitor = models.ForeignKey(
-        "monitors.Monitor", on_delete=models.CASCADE, related_name="check_results"
+        "monitors.Monitor", on_delete=models.CASCADE, related_name="check_results", db_index=False
     )
     checked_at = models.DateTimeField(default=timezone.now)
     ok = models.BooleanField()
@@ -20,7 +21,12 @@ class CheckResult(models.Model):
     class Meta:
         ordering = ("-checked_at", "-id")
         indexes = [
-            models.Index(fields=("monitor", "-checked_at"), name="check_monitor_checked_idx"),
+            # Covering index: stats read ok/response_time_ms without touching the heap
+            models.Index(
+                fields=("monitor", "-checked_at"),
+                include=("ok", "response_time_ms"),
+                name="check_monitor_checked_idx",
+            ),
         ]
 
     def __str__(self) -> str:
