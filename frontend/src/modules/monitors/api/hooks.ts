@@ -1,15 +1,17 @@
 import { keepPreviousData, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { MonitorPayload } from '../model/form'
+import { LIVE_REFRESH_MS } from '@/shared/config/live'
+
 import { monitorKeys } from '../model/queryKeys'
 import type { Monitor } from '../model/types'
 import { monitorsApi } from './monitorsApi'
 
 export const monitorsQueryOptions = () =>
-  queryOptions({ queryKey: monitorKeys.list(), queryFn: monitorsApi.list })
+  queryOptions({ queryKey: monitorKeys.list(), queryFn: monitorsApi.list, refetchInterval: LIVE_REFRESH_MS })
 
 export const monitorsSummaryQueryOptions = () =>
-  queryOptions({ queryKey: monitorKeys.summary(), queryFn: monitorsApi.summary })
+  queryOptions({ queryKey: monitorKeys.summary(), queryFn: monitorsApi.summary, refetchInterval: LIVE_REFRESH_MS })
 
 export function useMonitors() {
   return useQuery(monitorsQueryOptions())
@@ -20,7 +22,7 @@ export function useMonitorsSummary() {
 }
 
 export const monitorQueryOptions = (id: number) =>
-  queryOptions({ queryKey: monitorKeys.detail(id), queryFn: () => monitorsApi.get(id) })
+  queryOptions({ queryKey: monitorKeys.detail(id), queryFn: () => monitorsApi.get(id), refetchInterval: LIVE_REFRESH_MS })
 
 export function useMonitor(id: number) {
   return useQuery(monitorQueryOptions(id))
@@ -51,6 +53,7 @@ export function useMonitorChecks(id: number, page: number) {
   return useQuery({
     queryKey: monitorKeys.checks(id, page),
     queryFn: () => monitorsApi.checks(id, page),
+    refetchInterval: LIVE_REFRESH_MS,
     placeholderData: keepPreviousData,
   })
 }

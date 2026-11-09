@@ -18,7 +18,7 @@ export function MonitorDetailPage() {
   const { period, page = 1 } = route.useSearch()
   const navigate = route.useNavigate()
   // Loaded by the route loader
-  const { data: monitor } = useSuspenseQuery(monitorQueryOptions(monitorId))
+  const { data: monitor, dataUpdatedAt, isFetching } = useSuspenseQuery(monitorQueryOptions(monitorId))
   const deleteMonitor = useDeleteMonitor(monitorId, () => navigate({ to: '/', search: {}, replace: true }))
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
@@ -29,7 +29,12 @@ export function MonitorDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <MonitorHeader monitor={monitor} onDelete={() => setConfirmingDelete(true)} />
+      <MonitorHeader
+        monitor={monitor}
+        updatedAt={dataUpdatedAt}
+        fetching={isFetching}
+        onDelete={() => setConfirmingDelete(true)}
+      />
 
       <MonitorStatsSection monitorId={monitorId} period={period} onPeriodChange={setPeriod} />
 

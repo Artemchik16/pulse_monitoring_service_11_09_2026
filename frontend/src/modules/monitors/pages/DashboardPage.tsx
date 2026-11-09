@@ -2,7 +2,7 @@ import { getRouteApi, Link } from '@tanstack/react-router'
 import { Activity, Plus, SearchX } from 'lucide-react'
 
 import { toApiError } from '@/shared/api'
-import { Button, buttonVariants, EmptyState, ErrorState, InlineAlert } from '@/shared/ui'
+import { Button, buttonVariants, EmptyState, ErrorState, InlineAlert, LiveIndicator } from '@/shared/ui'
 
 import { useMonitors, useMonitorsSummary } from '../api/hooks'
 import { MAX_MONITORS_PER_USER } from '../model/constants'
@@ -47,8 +47,11 @@ export function DashboardPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-title font-bold">Мониторы</h1>
         {monitors.data ? (
-          <p className="text-caption text-muted-foreground">
-            {monitors.data.length} из {MAX_MONITORS_PER_USER}
+          <p className="flex flex-wrap items-center gap-x-3 text-caption text-muted-foreground">
+            <span>
+              {monitors.data.length} из {MAX_MONITORS_PER_USER}
+            </span>
+            <LiveIndicator updatedAt={monitors.dataUpdatedAt} fetching={monitors.isFetching} />
           </p>
         ) : null}
       </div>

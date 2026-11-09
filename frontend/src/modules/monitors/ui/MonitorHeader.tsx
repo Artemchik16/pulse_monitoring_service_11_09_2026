@@ -3,7 +3,7 @@ import { ArrowLeft, Pause, Pencil, Play, Trash2 } from 'lucide-react'
 
 import { toApiError } from '@/shared/api'
 import { formatDateTime } from '@/shared/lib/format'
-import { Button, buttonVariants, InlineAlert } from '@/shared/ui'
+import { Button, buttonVariants, InlineAlert, LiveIndicator } from '@/shared/ui'
 
 import { useSetMonitorActive } from '../api/hooks'
 import { intervalLabel } from '../model/form'
@@ -12,10 +12,12 @@ import { MonitorStatusBadge } from './MonitorStatusBadge'
 
 interface MonitorHeaderProps {
   monitor: Monitor
+  updatedAt: number
+  fetching: boolean
   onDelete: () => void
 }
 
-export function MonitorHeader({ monitor, onDelete }: MonitorHeaderProps) {
+export function MonitorHeader({ monitor, updatedAt, fetching, onDelete }: MonitorHeaderProps) {
   const setActive = useSetMonitorActive(monitor.id)
 
   return (
@@ -33,6 +35,7 @@ export function MonitorHeader({ monitor, onDelete }: MonitorHeaderProps) {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="min-w-0 text-title font-bold break-words">{monitor.name}</h1>
             <MonitorStatusBadge status={monitor.status} />
+            <LiveIndicator updatedAt={updatedAt} fetching={fetching} />
           </div>
           <a
             href={monitor.url}
