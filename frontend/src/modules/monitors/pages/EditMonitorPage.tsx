@@ -14,7 +14,7 @@ export function EditMonitorPage() {
   // Loaded by the route loader: no empty form flashes before the data arrives
   const { data: monitor } = useSuspenseQuery(monitorQueryOptions(monitorId))
   const updateMonitor = useUpdateMonitor(monitorId)
-  const backToDashboard = () => void navigate({ to: '/' })
+  const backToMonitor = () => void navigate({ to: '/monitors/$monitorId', params: { monitorId } })
 
   return (
     <MonitorFormLayout title="Изменить монитор">
@@ -24,8 +24,8 @@ export function EditMonitorPage() {
         initialValues={toFormValues(monitor)}
         submitLabel="Сохранить"
         onSubmit={updateMonitor.mutateAsync}
-        onSuccess={backToDashboard}
-        onCancel={backToDashboard}
+        onSuccess={backToMonitor}
+        onCancel={backToMonitor}
       />
     </MonitorFormLayout>
   )

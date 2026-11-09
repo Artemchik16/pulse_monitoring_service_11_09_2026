@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
 import { App } from '@/app/App'
-import { makeMonitor, signIn } from '@/test/fixtures'
+import { makeMonitor, mockMonitorPage, signIn } from '@/test/fixtures'
 import { server } from '@/test/server'
 
 function renderAt(path: string) {
@@ -26,8 +26,9 @@ async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('create monitor', () => {
-  it('sends the form in API units and returns to the dashboard', async () => {
+  it('sends the form in API units and opens the new monitor', async () => {
     signIn()
+    mockMonitorPage(makeMonitor({ id: 9 }))
     let body: unknown
     server.use(
       http.post('/api/v1/monitors', async ({ request }) => {
@@ -47,7 +48,7 @@ describe('create monitor', () => {
     await user.click(screen.getByRole('switch', { name: 'Публичный' }))
     await user.click(screen.getByRole('button', { name: 'Создать монитор' }))
 
-    await waitFor(() => expect(history.location.pathname).toBe('/'))
+    await waitFor(() => expect(history.location.pathname).toBe('/monitors/9'))
     expect(body).toEqual({
       name: 'Основной сайт',
       url: 'https://example.com/health',
@@ -133,11 +134,11 @@ describe('create monitor', () => {
 describe('edit monitor', () => {
   const stored = makeMonitor({ id: 5, name: 'API', url: 'https://api.example.com', interval_sec: 600, timeout_ms: 7500, method: 'HEAD' })
 
-  it('loads the monitor, saves with PUT and returns to the dashboard', async () => {
+  it('loads the monitor, saves with PUT and returns to the monitor page', async () => {
     signIn()
+    mockMonitorPage(stored)
     let body: Record<string, unknown> | undefined
     server.use(
-      http.get('/api/v1/monitors/5', () => HttpResponse.json(stored)),
       http.put('/api/v1/monitors/5', async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>
         return HttpResponse.json({ ...stored, ...body })
@@ -156,7 +157,7 @@ describe('edit monitor', () => {
     await user.type(name, 'API v2')
     await user.click(screen.getByRole('button', { name: 'Сохранить' }))
 
-    await waitFor(() => expect(history.location.pathname).toBe('/'))
+    await waitFor(() => expect(history.location.pathname).toBe('/monitors/5'))
     expect(body).toMatchObject({ name: 'API v2', method: 'HEAD', interval_sec: 600, timeout_ms: 7500 })
   })
 

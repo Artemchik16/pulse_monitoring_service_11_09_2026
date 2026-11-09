@@ -3,4 +3,5 @@ export const monitorKeys = {
   list: () => [...monitorKeys.all, 'list'] as const,
   summary: () => [...monitorKeys.all, 'summary'] as const,
   detail: (id: number) => [...monitorKeys.all, 'detail', id] as const,
+  checks: (id: number, page: number) => [...monitorKeys.all, 'checks', id, page] as const,
 }

@@ -44,17 +44,30 @@ export function MonitorCard({ monitor, summaryLoading }: MonitorCardProps) {
   const failed = last != null && !last.ok
 
   return (
-    <Card className={cn('flex flex-col gap-4 p-4', monitor.status === 'PAUSED' && 'opacity-75')}>
+    <Card
+      className={cn(
+        'relative flex flex-col gap-4 p-4 transition-colors has-[a[data-card-link]:hover]:border-border-strong',
+        monitor.status === 'PAUSED' && 'opacity-75',
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h2 className="truncate text-body font-semibold text-foreground" title={monitor.name}>
-            {monitor.name}
+            {/* Stretched link: the whole card opens the monitor page */}
+            <Link
+              to="/monitors/$monitorId"
+              params={{ monitorId: monitor.id }}
+              data-card-link
+              className="rounded-(--radius-card) after:absolute after:inset-0 after:content-['']"
+            >
+              {monitor.name}
+            </Link>
           </h2>
           <p className="truncate text-micro text-muted-foreground" title={monitor.url}>
             <span className="font-semibold">{monitor.method}</span> {monitor.url}
           </p>
         </div>
-        <div className="-mt-1.5 -mr-1.5 flex shrink-0 items-center gap-1">
+        <div className="relative -mt-1.5 -mr-1.5 flex shrink-0 items-center gap-1">
           <MonitorStatusBadge status={monitor.status} />
           <Link
             to="/monitors/$monitorId/edit"

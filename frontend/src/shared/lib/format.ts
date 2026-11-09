@@ -35,3 +35,24 @@ export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return DASH
   return new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
 }
+
+/** 45 с, 12 мин, 2 ч 5 мин, 3 д 4 ч */
+export function formatDuration(totalSeconds: number | null | undefined): string {
+  if (totalSeconds == null) return DASH
+  const sec = Math.max(0, Math.round(totalSeconds))
+  if (sec < 60) return `${sec} с`
+  const minutes = Math.floor(sec / 60)
+  if (minutes < 60) return `${minutes} мин`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return minutes % 60 ? `${hours} ч ${minutes % 60} мин` : `${hours} ч`
+  const days = Math.floor(hours / 24)
+  return hours % 24 ? `${days} д ${hours % 24} ч` : `${days} д`
+}
+
+/** Axis label: time of day for short windows, date for long ones. */
+export function formatAxisTick(iso: string, withDate: boolean): string {
+  const options: Intl.DateTimeFormatOptions = withDate
+    ? { day: '2-digit', month: '2-digit' }
+    : { hour: '2-digit', minute: '2-digit' }
+  return new Intl.DateTimeFormat(LOCALE, options).format(new Date(iso))
+}

@@ -49,3 +49,14 @@ export interface MonitorSummary {
 export interface DashboardMonitor extends Monitor {
   summary: MonitorSummary | undefined
 }
+
+export interface CheckResult {
+  id: number
+  checked_at: string
+  ok: boolean
+  status_code: number | null
+  response_time_ms: number | null
+  error_code: string
+  /** Human-readable failure reason from the backend */
+  error: string
+}

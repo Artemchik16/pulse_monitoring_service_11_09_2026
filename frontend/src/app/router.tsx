@@ -14,6 +14,8 @@ import {
   DashboardPage,
   dashboardSearchSchema,
   EditMonitorPage,
+  MonitorDetailPage,
+  monitorDetailSearchSchema,
   monitorQueryOptions,
   NewMonitorPage,
 } from '@/modules/monitors'
@@ -100,26 +102,37 @@ const monitorParams = {
   stringify: ({ monitorId }: { monitorId: number }) => ({ monitorId: String(monitorId) }),
 }
 
+async function loadMonitor({ context, params }: { context: RouterContext; params: { monitorId: number } }) {
+  try {
+    await context.queryClient.ensureQueryData(monitorQueryOptions(params.monitorId))
+  } catch (error) {
+    // Missing or someone else's monitor: the API answers 404 for both
+    if (error instanceof ApiError && error.status === 404) throw notFound()
+    throw error
+  }
+}
+
+const monitorDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/monitors/$monitorId',
+  params: monitorParams,
+  validateSearch: monitorDetailSearchSchema,
+  loader: loadMonitor,
+  component: MonitorDetailPage,
+})
+
 const editMonitorRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/monitors/$monitorId/edit',
   params: monitorParams,
-  loader: async ({ context, params }) => {
-    try {
-      await context.queryClient.ensureQueryData(monitorQueryOptions(params.monitorId))
-    } catch (error) {
-      // Missing or someone else's monitor: the API answers 404 for both
-      if (error instanceof ApiError && error.status === 404) throw notFound()
-      throw error
-    }
-  },
+  loader: loadMonitor,
   component: EditMonitorPage,
 })
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
-  appRoute.addChildren([dashboardRoute, newMonitorRoute, editMonitorRoute]),
+  appRoute.addChildren([dashboardRoute, newMonitorRoute, monitorDetailRoute, editMonitorRoute]),
 ])
 
 export function createAppRouter(queryClient: QueryClient, history?: RouterHistory) {

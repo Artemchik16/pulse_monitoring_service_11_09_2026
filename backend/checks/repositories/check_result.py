@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from django.db import connection
+from django.db.models import QuerySet
 
 from checks.models import CheckResult
 
@@ -13,6 +14,16 @@ class CheckResultRepository:
         """Store a check outcome."""
 
         return CheckResult.objects.create(monitor_id=monitor_id, **fields)
+
+    def list_by_monitor(self, *, monitor_id: int) -> QuerySet[CheckResult]:
+        """Check history of a monitor, newest first (served by the (monitor_id, checked_at) index)."""
+
+        return CheckResult.objects.filter(monitor_id=monitor_id).order_by("-checked_at", "-id")
+
+    def none(self) -> QuerySet[CheckResult]:
+        """Empty queryset (OpenAPI schema generation has no monitor to scope by)."""
+
+        return CheckResult.objects.none()
 
     def delete_older_than(self, *, monitor_id: int, before: datetime, limit: int) -> int:
         """Delete up to `limit` rows of a monitor checked before the moment; return the count.
