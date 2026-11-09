@@ -14,6 +14,11 @@ class UserRepository:
 
         return User.objects.filter(id=user_id, is_active=True).first()
 
+    def lock_by_id(self, *, user_id: int) -> User:
+        """Lock the User row until the end of the current transaction."""
+
+        return User.objects.select_for_update().get(id=user_id)
+
     def create(self, *, email: str, password: str) -> User:
         """Create a User with a hashed password."""
 

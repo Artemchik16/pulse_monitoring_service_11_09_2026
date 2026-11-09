@@ -8,3 +8,6 @@ urlpatterns = [
     path("api/", include("api.openapi.urls")),
     path("", include("api.urls.base_urls", namespace="base")),
 ]
+
+handler404 = "common.views.not_found"
+handler500 = "common.views.server_error"

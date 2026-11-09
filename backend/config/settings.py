@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     # Project apps
     "common.apps.CommonConfig",
     "users.apps.UsersConfig",
+    "monitors.apps.MonitorsConfig",
     "api.apps.ApiConfig",
 ]
 #########################
@@ -194,8 +195,7 @@ REST_FRAMEWORK = {
         else ("rest_framework.renderers.JSONRenderer",)
     ),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
+    "DEFAULT_PAGINATION_CLASS": "common.pagination.DefaultPagination",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.unified_exception_handler",
     "DEFAULT_THROTTLE_RATES": {"auth": "20/min"},

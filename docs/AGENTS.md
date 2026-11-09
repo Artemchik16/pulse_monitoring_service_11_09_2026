@@ -76,11 +76,18 @@ api           → every module's urls (wiring only)
 monitors/
   __init__.py
   apps.py
-  admin.py
+  admin/
+    __init__.py         # explicit re-exports (importing registers the admins)
+    monitor.py          # MonitorAdmin
   choices.py            # TextChoices enums (MonitorStatusChoices, HttpMethodChoices)
-  models.py             # or models/ package when > 1-2 models
-  repositories/
+  constants.py          # limits shared by serializers and services (MAX_MONITORS_PER_USER)
+  exceptions.py         # DomainError subclasses (MonitorLimitReached)
+  models/
     __init__.py         # explicit re-exports
+    monitor.py          # Monitor
+    managers/           # custom managers, if any
+  repositories/
+    __init__.py
     monitor.py          # MonitorRepository
   services/
     __init__.py
@@ -88,21 +95,25 @@ monitors/
   serializers/
     __init__.py
     monitor.py          # MonitorInputSerializer, MonitorOutputSerializer
+  filters/
+    __init__.py
+    monitor.py          # MonitorFilter (django-filter)
   views/
     __init__.py
     monitor.py          # MonitorViewSet
-  permissions.py        # only if module-specific
   throttling/
-    __init__.py         # explicit re-exports
-    auth.py             # AuthRateThrottle — all module throttles live here
-  filters.py            # django-filter FilterSets
+    __init__.py
+    <topic>.py          # <Name>RateThrottle — all module throttles live here
+  permissions/          # only if module-specific
   tasks.py              # Celery tasks — thin wrappers calling services
   urls.py
   migrations/
   tests/
+    test_<topic>.py
 ```
 
-Create only the files a module actually needs (YAGNI). Small modules may use flat `services.py` / `repositories.py`.
+Every layer is a **package** (one file per aggregate/topic + explicit re-exports in `__init__.py`).
+Create only the packages a module actually needs (YAGNI).
 
 ### Layers
 

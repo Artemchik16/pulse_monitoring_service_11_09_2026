@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.http import Http404
 from rest_framework import exceptions, status
@@ -86,7 +87,7 @@ def unified_exception_handler(exc: Exception, context: dict[str, Any]) -> Respon
             status=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
 
-    if isinstance(exc, Http404):
+    if isinstance(exc, Http404 | ObjectDoesNotExist):
         exc = exceptions.NotFound()
     elif isinstance(exc, DjangoPermissionDenied):
         exc = exceptions.PermissionDenied()
