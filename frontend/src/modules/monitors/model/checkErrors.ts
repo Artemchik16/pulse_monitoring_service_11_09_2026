@@ -9,6 +9,8 @@ const SHORT_LABELS: Record<string, string> = {
   BODY_TOO_LARGE: 'Слишком большой ответ',
   INVALID_URL: 'Некорректный URL',
   BLOCKED_ADDRESS: 'Запрещённый адрес',
+  CONTENT_MISMATCH: 'Нет нужной строки',
+  INVALID_JSON: 'Ответ не JSON',
 }
 
 /** Short reason of a failed check for compact places (cards, table cells). */

@@ -16,6 +16,8 @@ export function monitor(id: number, overrides: Record<string, unknown> = {}) {
     expected_status_to: 299,
     interval_sec: 60,
     timeout_ms: 5000,
+    body_contains: '',
+    expect_json: false,
     is_active: true,
     is_public: true,
     status: 'UP',

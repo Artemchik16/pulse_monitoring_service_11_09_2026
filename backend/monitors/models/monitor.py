@@ -24,6 +24,9 @@ class Monitor(models.Model):
     )
     interval_sec = models.PositiveIntegerField(default=constants.DEFAULT_INTERVAL_SEC)
     timeout_ms = models.PositiveIntegerField(default=constants.DEFAULT_TIMEOUT_MS)
+    # Optional content checks (GET/POST only): "200 but wrong content"
+    body_contains = models.CharField(max_length=constants.BODY_CONTAINS_MAX, blank=True)
+    expect_json = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False)
 

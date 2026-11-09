@@ -40,6 +40,8 @@ class CheckService:
                 timeout_ms=monitor.timeout_ms,
                 expected_status_from=monitor.expected_status_from,
                 expected_status_to=monitor.expected_status_to,
+                body_contains=monitor.body_contains,
+                expect_json=monitor.expect_json,
             )
             # History row and monitor state change together or not at all
             with transaction.atomic():

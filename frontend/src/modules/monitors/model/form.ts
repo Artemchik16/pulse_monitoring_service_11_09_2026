@@ -80,10 +80,15 @@ export const monitorFormSchema = z
       .number({ error: 'Введите число' })
       .min(LIMITS.timeoutMinSec, `От ${LIMITS.timeoutMinSec} до ${LIMITS.timeoutMaxSec} секунд`)
       .max(LIMITS.timeoutMaxSec, `От ${LIMITS.timeoutMinSec} до ${LIMITS.timeoutMaxSec} секунд`),
+    body_contains: z.string().max(200, 'Не длиннее 200 символов'),
+    expect_json: z.boolean(),
     is_active: z.boolean(),
     is_public: z.boolean(),
   })
   .superRefine((values, ctx) => {
+    if (values.method === 'HEAD' && (values.body_contains.trim() || values.expect_json)) {
+      ctx.addIssue({ code: 'custom', path: ['method'], message: 'HEAD-запрос без тела: проверку содержимого используйте с GET или POST' })
+    }
     if (values.timeout_sec >= values.interval_sec) {
       ctx.addIssue({ code: 'custom', path: ['timeout_sec'], message: 'Таймаут должен быть меньше интервала проверки' })
     }
@@ -107,6 +112,8 @@ export interface MonitorPayload {
   expected_status_to: number
   interval_sec: number
   timeout_ms: number
+  body_contains: string
+  expect_json: boolean
   is_active: boolean
   is_public: boolean
 }
@@ -119,6 +126,8 @@ export const MONITOR_FORM_FIELDS = [
   'expected_status_to',
   'interval_sec',
   'timeout_sec',
+  'body_contains',
+  'expect_json',
   'is_active',
   'is_public',
 ] as const satisfies readonly (keyof MonitorFormValues)[]
@@ -134,6 +143,8 @@ export const DEFAULT_MONITOR_FORM: MonitorFormValues = {
   expected_status_to: 299,
   interval_sec: 300,
   timeout_sec: 10,
+  body_contains: '',
+  expect_json: false,
   is_active: true,
   is_public: false,
 }
@@ -147,6 +158,8 @@ export function toFormValues(monitor: Monitor): MonitorFormValues {
     expected_status_to: monitor.expected_status_to,
     interval_sec: monitor.interval_sec,
     timeout_sec: monitor.timeout_ms / 1000,
+    body_contains: monitor.body_contains,
+    expect_json: monitor.expect_json,
     is_active: monitor.is_active,
     is_public: monitor.is_public,
   }
@@ -161,6 +174,8 @@ export function toPayload(values: MonitorFormValues): MonitorPayload {
     expected_status_to: values.expected_status_to,
     interval_sec: values.interval_sec,
     timeout_ms: Math.round(values.timeout_sec * 1000),
+    body_contains: values.body_contains,
+    expect_json: values.expect_json,
     is_active: values.is_active,
     is_public: values.is_public,
   }

@@ -201,6 +201,44 @@ export function MonitorForm({ initialValues, submitLabel, onSubmit, onSuccess, o
         </div>
       </Section>
 
+      <Section title="Проверка содержимого">
+        <p className="-mt-2 text-micro text-muted-foreground">
+          Необязательно. Ловит «200, но не то»: например, HTML-страницу ошибки вместо JSON. Только для GET и POST.
+        </p>
+        <form.Subscribe selector={(state) => state.values.method === 'HEAD'}>
+          {(isHead) => (
+            <>
+              <form.Field name="body_contains">
+                {(field) => (
+                  <FormField label="Ответ содержит строку" errors={field.state.meta.errors}>
+                    <Input
+                      name={field.name}
+                      maxLength={200}
+                      placeholder="Например, &quot;status&quot;: &quot;ok&quot;"
+                      disabled={isHead}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+              <form.Field name="expect_json">
+                {(field) => (
+                  <Switch
+                    label="Ответ — валидный JSON"
+                    description="Проверка не пройдёт, если вместо JSON пришла HTML-страница"
+                    checked={field.state.value}
+                    disabled={isHead}
+                    onChange={field.handleChange}
+                  />
+                )}
+              </form.Field>
+            </>
+          )}
+        </form.Subscribe>
+      </Section>
+
       <Section title="Настройки">
         <div className="flex flex-col divide-y divide-border [&>*]:py-2">
           <form.Field name="is_active">

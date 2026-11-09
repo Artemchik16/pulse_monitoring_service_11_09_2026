@@ -49,6 +49,10 @@ class MonitorInputSerializer(serializers.Serializer):
         max_value=constants.MAX_TIMEOUT_MS,
         default=constants.DEFAULT_TIMEOUT_MS,
     )
+    body_contains = serializers.CharField(
+        max_length=constants.BODY_CONTAINS_MAX, allow_blank=True, default="", trim_whitespace=False
+    )
+    expect_json = serializers.BooleanField(default=False)
     is_active = serializers.BooleanField(default=True)
     is_public = serializers.BooleanField(default=False)
 
@@ -76,6 +80,10 @@ class MonitorInputSerializer(serializers.Serializer):
         errors: dict[str, str] = {}
         if current("timeout_ms") >= current("interval_sec") * 1000:
             errors["timeout_ms"] = "Таймаут должен быть меньше интервала проверки"
+        if current("method") == "HEAD" and (current("body_contains") or current("expect_json")):
+            errors["method"] = (
+                "HEAD-запрос без тела: проверку содержимого используйте с GET или POST"
+            )
         if current("expected_status_from") > current("expected_status_to"):
             errors["expected_status_to"] = (
                 "Верхняя граница кода ответа должна быть не меньше нижней"
@@ -99,6 +107,8 @@ class MonitorOutputSerializer(serializers.ModelSerializer):
             "expected_status_to",
             "interval_sec",
             "timeout_ms",
+            "body_contains",
+            "expect_json",
             "is_active",
             "is_public",
             "status",

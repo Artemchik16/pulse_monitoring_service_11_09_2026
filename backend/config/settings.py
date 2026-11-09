@@ -28,6 +28,11 @@ env = environ.Env(
     # CORS/CSRF environ
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:5173", "http://127.0.0.1:5173"]),
     CSRF_TRUSTED_ORIGINS=(list, ["http://localhost:5173", "http://127.0.0.1:5173"]),
+    # Hostnames exempt from the SSRF guard (exact names, never IPs): our own backend when the
+    # playground is reached over a private network (docker compose: "backend"). Empty on hosting.
+    SSRF_ALLOWED_HOSTS=(list, []),
+    # How monitors reach the playground; default BASE_BACKEND_URL
+    PLAYGROUND_BASE_URL=(str, ""),
     # Telegram environ
     TELEGRAM_BOT_TOKEN=(str, ""),
     TELEGRAM_BOT_USERNAME=(str, ""),
@@ -79,6 +84,7 @@ INSTALLED_APPS = [
     "checks.apps.ChecksConfig",
     "stats.apps.StatsConfig",
     "status_pages.apps.StatusPagesConfig",
+    "playground.apps.PlaygroundConfig",
     "api.apps.ApiConfig",
 ]
 #########################
@@ -227,7 +233,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "common.pagination.DefaultPagination",
     "DEFAULT_SCHEMA_CLASS": "common.openapi.PulseAutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.unified_exception_handler",
-    "DEFAULT_THROTTLE_RATES": {"auth": "20/min", "public_status_page": "120/min"},
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "20/min",
+        "public_status_page": "120/min",
+        "playground_probe": "120/min",
+    },
 }
 #########################
 
@@ -264,6 +274,10 @@ SPECTACULAR_SETTINGS = {
         {"name": "Stats", "description": "Uptime, время ответа и график за 24h / 7d / 30d"},
         {"name": "Incidents", "description": "Инциденты: открываются и закрываются проверками"},
         {"name": "Status pages", "description": "Статус-страницы: свои и публичные /status/{slug}"},
+        {
+            "name": "Playground",
+            "description": "Полигон: тестовые эндпоинты с переключаемым поведением",
+        },
         {"name": "Health", "description": "Проверка работоспособности (БД, Redis)"},
     ],
     "SWAGGER_UI_SETTINGS": {
@@ -343,4 +357,7 @@ TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET")
 
 BASE_BACKEND_URL = env("BASE_BACKEND_URL")
 BASE_FRONTEND_URL = env("BASE_FRONTEND_URL")
+
+SSRF_ALLOWED_HOSTS = [host.strip().lower() for host in env("SSRF_ALLOWED_HOSTS") if host.strip()]
+PLAYGROUND_BASE_URL = (env("PLAYGROUND_BASE_URL") or BASE_BACKEND_URL).rstrip("/")
 #########################

@@ -4,6 +4,8 @@ import ipaddress
 import socket
 from urllib.parse import urlsplit
 
+from django.conf import settings
+
 IpAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 
 # Names that point inside the host or the cloud regardless of what public DNS says
@@ -69,6 +71,9 @@ def ensure_public_host(host: str, port: int) -> list[str]:
     """Resolve the host and return its IPs; raise if any of them is not public."""
 
     name = host.strip("[]").rstrip(".").lower()
+    if name in settings.SSRF_ALLOWED_HOSTS:
+        # Explicitly trusted own host (e.g. the playground inside docker compose): no IP check
+        return resolve_host(name, port)
     if name in BLOCKED_HOSTNAMES or name.endswith(BLOCKED_HOST_SUFFIXES):
         raise UnsafeTargetError(f"Адрес {host} ведёт во внутреннюю сеть")
 

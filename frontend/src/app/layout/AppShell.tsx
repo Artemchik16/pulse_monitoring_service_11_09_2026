@@ -8,6 +8,7 @@ import { Button, Logo, ThemeToggle } from '@/shared/ui'
 const NAV = [
   { to: '/', label: 'Мониторы', match: (path: string) => path === '/' || path.startsWith('/monitors') },
   { to: '/status-pages', label: 'Статус-страницы', match: (path: string) => path.startsWith('/status-pages') },
+  { to: '/playground', label: 'Полигон', match: (path: string) => path.startsWith('/playground') },
 ] as const
 
 function Nav({ className }: { className?: string }) {

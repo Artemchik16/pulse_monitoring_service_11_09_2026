@@ -12,6 +12,8 @@ export interface Monitor {
   expected_status_to: number
   interval_sec: number
   timeout_ms: number
+  body_contains: string
+  expect_json: boolean
   is_active: boolean
   is_public: boolean
   status: MonitorStatus

@@ -1,3 +1,4 @@
+import json
 import socket
 import ssl
 import time
@@ -45,8 +46,10 @@ class HttpProbe:
         timeout_ms: int,
         expected_status_from: int,
         expected_status_to: int,
+        body_contains: str = "",
+        expect_json: bool = False,
     ) -> ProbeResult:
-        """Request the URL and classify the outcome."""
+        """Request the URL and classify the outcome (status code, then optional content checks)."""
 
         timeout_sec = timeout_ms / 1000
         started = time.perf_counter()
@@ -55,8 +58,9 @@ class HttpProbe:
             with self._client(timeout_sec=timeout_sec) as client:
                 with client.stream(method, url) as response:
                     response_time_ms = self._elapsed_ms(started)
+                    body = b""
                     if method != "HEAD":
-                        self._drain_body(response=response, deadline=deadline)
+                        body = self._drain_body(response=response, deadline=deadline)
         except UnsafeTargetError as exc:
             return self._fail(CheckErrorChoices.BLOCKED_ADDRESS, str(exc))
         except _DeadlineExceeded:
@@ -91,9 +95,47 @@ class HttpProbe:
                 status_code=response.status_code,
                 response_time_ms=response_time_ms,
             )
+        content_failure = self._check_content(
+            body=body,
+            encoding=response.encoding,
+            content_type=response.headers.get("content-type", ""),
+            body_contains=body_contains,
+            expect_json=expect_json,
+        )
+        if content_failure is not None:
+            error_code, error = content_failure
+            return self._fail(
+                error_code,
+                error,
+                status_code=response.status_code,
+                response_time_ms=response_time_ms,
+            )
         return ProbeResult(
             ok=True, status_code=response.status_code, response_time_ms=response_time_ms
         )
+
+    @staticmethod
+    def _check_content(
+        *,
+        body: bytes,
+        encoding: str | None,
+        content_type: str,
+        body_contains: str,
+        expect_json: bool,
+    ) -> tuple[str, str] | None:
+        """Optional checks for "200 but wrong content" (e.g. an HTML error page instead of JSON)."""
+
+        if body_contains and body_contains not in body.decode(
+            encoding or "utf-8", errors="replace"
+        ):
+            return CheckErrorChoices.CONTENT_MISMATCH, f"В ответе нет строки «{body_contains[:80]}»"
+        if expect_json:
+            try:
+                json.loads(body)
+            except ValueError:
+                kind = content_type.split(";")[0].strip() or "без Content-Type"
+                return CheckErrorChoices.INVALID_JSON, f"Ответ не является валидным JSON ({kind})"
+        return None
 
     def _client(self, *, timeout_sec: float) -> httpx.Client:
         """Build a client with the probe limits."""
@@ -117,9 +159,10 @@ class HttpProbe:
         transport._pool._network_backend = SafeNetworkBackend()
         return transport
 
-    def _drain_body(self, *, response: httpx.Response, deadline: float) -> None:
+    def _drain_body(self, *, response: httpx.Response, deadline: float) -> bytes:
         """Read the body up to the size limit, enforcing the total time budget."""
 
+        chunks: list[bytes] = []
         received = 0
         for chunk in response.iter_bytes(chunk_size=constants.BODY_CHUNK_BYTES):
             received += len(chunk)
@@ -127,6 +170,8 @@ class HttpProbe:
                 raise _BodyTooLarge()
             if time.perf_counter() > deadline:
                 raise _DeadlineExceeded()
+            chunks.append(chunk)
+        return b"".join(chunks)
 
     def _connect_failure(self, exc: httpx.ConnectError) -> ProbeResult:
         """Tell DNS and TLS failures apart from plain connection errors."""

@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router'
 
 import { LoginPage, loginSearchSchema, meQueryOptions, RegisterPage } from '@/modules/auth'
+import { PlaygroundPage } from '@/modules/playground'
 import {
   DashboardPage,
   dashboardSearchSchema,
@@ -166,6 +167,12 @@ const editStatusPageRoute = createRoute({
   component: EditStatusPagePage,
 })
 
+const playgroundRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/playground',
+  component: PlaygroundPage,
+})
+
 /** Public status page: no auth guard, no app shell; works for signed-in users too. */
 const publicStatusRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -185,6 +192,7 @@ const routeTree = rootRoute.addChildren([
     statusPagesRoute,
     newStatusPageRoute,
     editStatusPageRoute,
+    playgroundRoute,
   ]),
 ])
 

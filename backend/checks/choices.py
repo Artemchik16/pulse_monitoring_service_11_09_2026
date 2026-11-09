@@ -13,3 +13,5 @@ class CheckErrorChoices(models.TextChoices):
     BODY_TOO_LARGE = "BODY_TOO_LARGE", "Превышен размер ответа"
     INVALID_URL = "INVALID_URL", "Некорректный URL"
     BLOCKED_ADDRESS = "BLOCKED_ADDRESS", "Запрещённый адрес"
+    CONTENT_MISMATCH = "CONTENT_MISMATCH", "Неожиданное содержимое"
+    INVALID_JSON = "INVALID_JSON", "Ответ не JSON"
