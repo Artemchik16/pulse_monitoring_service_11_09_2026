@@ -1,8 +1,8 @@
-import { getRouteApi } from '@tanstack/react-router'
-import { Activity, SearchX } from 'lucide-react'
+import { getRouteApi, Link } from '@tanstack/react-router'
+import { Activity, Plus, SearchX } from 'lucide-react'
 
 import { toApiError } from '@/shared/api'
-import { Button, EmptyState, ErrorState, InlineAlert } from '@/shared/ui'
+import { Button, buttonVariants, EmptyState, ErrorState, InlineAlert } from '@/shared/ui'
 
 import { useMonitors, useMonitorsSummary } from '../api/hooks'
 import { MAX_MONITORS_PER_USER } from '../model/constants'
@@ -15,6 +15,23 @@ const route = getRouteApi('/app/')
 
 const GRID = 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3'
 
+/** The view's one CTA; at the quota it turns into a disabled button that says why. */
+function AddMonitorButton({ atLimit }: { atLimit: boolean }) {
+  if (atLimit) {
+    return (
+      <Button disabled icon={<Plus />} title={`Достигнут лимит: ${MAX_MONITORS_PER_USER} мониторов`}>
+        Лимит {MAX_MONITORS_PER_USER} мониторов
+      </Button>
+    )
+  }
+  return (
+    <Link to="/monitors/new" className={buttonVariants()}>
+      <Plus />
+      Добавить монитор
+    </Link>
+  )
+}
+
 export function DashboardPage() {
   const { status } = route.useSearch()
   const navigate = route.useNavigate()
@@ -25,12 +42,17 @@ export function DashboardPage() {
     void navigate({ search: (prev) => ({ ...prev, status: next }), replace: true })
 
   const header = (
-    <div className="flex flex-col gap-1">
-      <h1 className="text-title font-bold">Мониторы</h1>
-      {monitors.data ? (
-        <p className="text-caption text-muted-foreground">
-          {monitors.data.length} из {MAX_MONITORS_PER_USER}
-        </p>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-title font-bold">Мониторы</h1>
+        {monitors.data ? (
+          <p className="text-caption text-muted-foreground">
+            {monitors.data.length} из {MAX_MONITORS_PER_USER}
+          </p>
+        ) : null}
+      </div>
+      {monitors.data?.length ? (
+        <AddMonitorButton atLimit={monitors.data.length >= MAX_MONITORS_PER_USER} />
       ) : null}
     </div>
   )
@@ -71,6 +93,7 @@ export function DashboardPage() {
           icon={Activity}
           title="Мониторов пока нет"
           description="Добавьте сайт или API — Pulse будет проверять его по расписанию и сообщит, если он перестанет отвечать."
+          action={<AddMonitorButton atLimit={false} />}
         />
       </div>
     )

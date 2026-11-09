@@ -4,12 +4,19 @@ import {
   createRootRouteWithContext,
   createRoute,
   createRouter,
+  notFound,
   Outlet,
   redirect,
 } from '@tanstack/react-router'
 
 import { LoginPage, loginSearchSchema, meQueryOptions, RegisterPage } from '@/modules/auth'
-import { DashboardPage, dashboardSearchSchema } from '@/modules/monitors'
+import {
+  DashboardPage,
+  dashboardSearchSchema,
+  EditMonitorPage,
+  monitorQueryOptions,
+  NewMonitorPage,
+} from '@/modules/monitors'
 import { ApiError, isAuthenticated, sessionStore } from '@/shared/api'
 
 import { AppShell } from './layout/AppShell'
@@ -67,6 +74,7 @@ const appRoute = createRoute({
   component: AppShell,
   pendingComponent: RoutePending,
   errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
 })
 
 const dashboardRoute = createRoute({
@@ -76,10 +84,42 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 })
 
+const newMonitorRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/monitors/new',
+  component: NewMonitorPage,
+})
+
+/** `/monitors/$monitorId/...`: the id is a positive integer, anything else is "not found". */
+const monitorParams = {
+  parse: ({ monitorId }: { monitorId: string }) => {
+    const id = Number(monitorId)
+    if (!Number.isInteger(id) || id <= 0) throw notFound()
+    return { monitorId: id }
+  },
+  stringify: ({ monitorId }: { monitorId: number }) => ({ monitorId: String(monitorId) }),
+}
+
+const editMonitorRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/monitors/$monitorId/edit',
+  params: monitorParams,
+  loader: async ({ context, params }) => {
+    try {
+      await context.queryClient.ensureQueryData(monitorQueryOptions(params.monitorId))
+    } catch (error) {
+      // Missing or someone else's monitor: the API answers 404 for both
+      if (error instanceof ApiError && error.status === 404) throw notFound()
+      throw error
+    }
+  },
+  component: EditMonitorPage,
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
-  appRoute.addChildren([dashboardRoute]),
+  appRoute.addChildren([dashboardRoute, newMonitorRoute, editMonitorRoute]),
 ])
 
 export function createAppRouter(queryClient: QueryClient, history?: RouterHistory) {

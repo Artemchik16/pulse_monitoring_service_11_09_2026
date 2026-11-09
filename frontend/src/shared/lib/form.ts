@@ -10,12 +10,17 @@ export interface FormServerErrors {
  * Map an API error onto form errors: field messages next to their inputs (TZ B3),
  * everything else as one form-level message. Unknown fields fall back to the form message.
  */
-export function toFormErrors(error: unknown, knownFields: readonly string[]): FormServerErrors {
+export function toFormErrors(
+  error: unknown,
+  knownFields: readonly string[],
+  aliases: Readonly<Record<string, string>> = {},
+): FormServerErrors {
   const apiError = error instanceof ApiError ? error : toApiError(error)
   const fields: Record<string, string> = {}
   const orphanMessages: string[] = []
 
-  for (const [name, messages] of Object.entries(apiError.fields)) {
+  for (const [apiName, messages] of Object.entries(apiError.fields)) {
+    const name = aliases[apiName] ?? apiName
     if (knownFields.includes(name)) fields[name] = messages[0] ?? ''
     else orphanMessages.push(...messages)
   }
@@ -36,13 +41,15 @@ export function toFormErrors(error: unknown, knownFields: readonly string[]): Fo
 export function submitWithServerErrors<TValues>(
   submit: (values: TValues) => Promise<unknown>,
   knownFields: readonly (keyof TValues & string)[],
+  /** API field -> form field, when the form edits a value in other units (timeout_ms -> timeout_sec) */
+  aliases: Readonly<Record<string, keyof TValues & string>> = {},
 ) {
   return async ({ value }: { value: TValues }) => {
     try {
       await submit(value)
       return undefined
     } catch (error) {
-      return toFormErrors(error, knownFields)
+      return toFormErrors(error, knownFields, aliases)
     }
   }
 }

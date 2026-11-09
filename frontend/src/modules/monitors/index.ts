@@ -1,4 +1,7 @@
+export { monitorQueryOptions } from './api/hooks'
 export { dashboardSearchSchema } from './model/dashboard'
 export type { Monitor, MonitorStatus } from './model/types'
 export { DashboardPage } from './pages/DashboardPage'
+export { EditMonitorPage } from './pages/EditMonitorPage'
+export { NewMonitorPage } from './pages/NewMonitorPage'
 export { MonitorStatusBadge } from './ui/MonitorStatusBadge'

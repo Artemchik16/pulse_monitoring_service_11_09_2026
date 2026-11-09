@@ -1,4 +1,7 @@
-import { Card } from '@/shared/ui'
+import { Link } from '@tanstack/react-router'
+import { Pencil } from 'lucide-react'
+
+import { buttonVariants, Card } from '@/shared/ui'
 import { cn } from '@/shared/lib/cn'
 import { formatDateTime, formatMs, formatPercent, formatRelative } from '@/shared/lib/format'
 
@@ -51,7 +54,17 @@ export function MonitorCard({ monitor, summaryLoading }: MonitorCardProps) {
             <span className="font-semibold">{monitor.method}</span> {monitor.url}
           </p>
         </div>
-        <MonitorStatusBadge status={monitor.status} className="shrink-0" />
+        <div className="-mt-1.5 -mr-1.5 flex shrink-0 items-center gap-1">
+          <MonitorStatusBadge status={monitor.status} />
+          <Link
+            to="/monitors/$monitorId/edit"
+            params={{ monitorId: monitor.id }}
+            className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+            aria-label={`Изменить «${monitor.name}»`}
+          >
+            <Pencil />
+          </Link>
+        </div>
       </div>
 
       <dl className="grid grid-cols-3 gap-3">

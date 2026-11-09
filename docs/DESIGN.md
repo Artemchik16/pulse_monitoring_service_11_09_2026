@@ -197,6 +197,18 @@ Numbers in metrics use `tabular-nums`.
 - The password eye is a 44px target with an `aria-label`.
 - Labels are always visible (no placeholder-as-label).
 
+**Switch** (`shared/ui/Switch.tsx`). `role="switch"`, 52×32 with a 44px target. On track is
+`--primary`; off is `--switch-track-off` (light `rgb(60 60 67 / .56)`, 3.11:1 on white; dark
+`--input`); the thumb is `--control-thumb` (white) with `--control-thumb-shadow`. Always paired with
+a visible text label (the whole row is clickable).
+
+**Select** (`shared/ui/Select.tsx`). A native `<select>` in the field well (same chrome as Input) with
+a chevron: native pickers are the best on phones.
+
+**SegmentedControl** (`shared/ui/SegmentedControl.tsx`). The iOS segmented control for 2–4 mutually
+exclusive options (HTTP method, stats period): `--segmented-track` with the active segment on
+`--segmented-thumb`; a radio group under the hood (arrow keys move the choice).
+
 **FilterChip** (status filter on the dashboard). `bg-muted` at rest; active is
 `--chip-active-fill` under `--chip-active-ink` (light: brand 14% under `--primary-ink`, 5.10:1;
 dark: brand 22% over `--muted` under `#F3956A`, 5.13:1). A toggle: `aria-pressed`; the chip row is

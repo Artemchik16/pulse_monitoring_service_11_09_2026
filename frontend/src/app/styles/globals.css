@@ -80,6 +80,12 @@ html.dark {
   --field-fill: var(--card);
   --chip-active-fill: color-mix(in srgb, var(--brand-base) 14%, transparent);
   --chip-active-ink: var(--primary-ink);
+  --switch-track-off: rgb(60 60 67 / 0.56);
+  --control-thumb: #ffffff;
+  --control-thumb-shadow: 0 1px 3px rgb(0 0 0 / 0.16), 0 1px 1px rgb(0 0 0 / 0.08);
+  --segmented-track: rgb(118 118 128 / 0.12);
+  --segmented-thumb: #ffffff;
+  --segmented-thumb-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04);
   --skeleton: color-mix(in srgb, var(--foreground) 8%, transparent);
   --overlay: #000000;
 
@@ -154,6 +160,11 @@ html.dark {
   /* --primary-ink is 3.76:1 on the dark chip; the lighter brand step clears 5.13:1 */
   --chip-active-fill: color-mix(in srgb, var(--brand-base) 22%, var(--muted));
   --chip-active-ink: #f3956a;
+  --switch-track-off: var(--input);
+  --control-thumb-shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.2);
+  --segmented-track: rgb(118 118 128 / 0.24);
+  --segmented-thumb: #48484c;
+  --segmented-thumb-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 3px 8px rgb(0 0 0 / 0.36);
 
   --cta-fill: linear-gradient(180deg, var(--brand-base), var(--brand-active));
   --cta-edge: rgb(255 255 255 / 0.16);
@@ -194,6 +205,10 @@ html.dark {
   --color-field: var(--field-fill);
   --color-chip-active: var(--chip-active-fill);
   --color-chip-active-foreground: var(--chip-active-ink);
+  --color-switch-off: var(--switch-track-off);
+  --color-control-thumb: var(--control-thumb);
+  --color-segmented-track: var(--segmented-track);
+  --color-segmented-thumb: var(--segmented-thumb);
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
@@ -237,6 +252,8 @@ html.dark {
   --shadow-card: var(--shadow-card);
   --shadow-soft: var(--shadow-soft);
   --shadow-cta: var(--cta-shadow);
+  --shadow-thumb: var(--control-thumb-shadow);
+  --shadow-segmented: var(--segmented-thumb-shadow);
 
   --text-title: clamp(1.5rem, 1.36rem + 0.57vw, 1.875rem);
   --text-title--line-height: 1.2;
