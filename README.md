@@ -2,6 +2,7 @@
 
 Сервис мониторинга доступности сайтов и API. Техническое задание — [`docs/TZ.md`](docs/TZ.md),
 правила разработки — [`docs/AGENTS.md`](docs/AGENTS.md).
+Все адреса — страницы, API, Django-админка — с описанием: [`docs/ROUTES.md`](docs/ROUTES.md).
 
 ## Локальный запуск
 
@@ -27,6 +28,7 @@ docker compose up --build      # или: make up
 - **Приложение:** http://localhost:8080
 - **Демо-аккаунт:** `demo@pulse.app` / `DemoPulse2026!` — мониторы Pleazy, EnterEdu, AgroGo,
   Proxymo и публичная статус-страница http://localhost:8080/status/demo
+- **Django-админка:** http://localhost:8000/admin/ — `admin@pulse.app` / `AdminPulse2026!`
 - **API и Swagger:** http://localhost:8000/api/docs (или через фронтенд http://localhost:8080/api/docs),
   health — http://localhost:8000/health
 
@@ -36,7 +38,7 @@ docker compose up --build      # или: make up
 |---|---|
 | `db` | PostgreSQL 16 (порт 5432 открыт для локальной разработки) |
 | `redis` | Redis 7: кэш и брокер Celery (порт 6379) |
-| `backend` | Django + gunicorn на :8000. Старт через `deploy/entrypoint.sh`: `migrate` → `create_demo_user` → `seed_demo` → gunicorn; все шаги идемпотентны, повторный старт ничего не дублирует |
+| `backend` | Django + gunicorn на :8000. Старт через `deploy/entrypoint.sh`: `migrate` → `create_demo_user` → `create_admin_user` → `seed_demo` → gunicorn; все шаги идемпотентны, повторный старт ничего не дублирует |
 | `celery-worker`, `celery-beat` | фоновые проверки по расписанию и очистка истории; entrypoint не запускают (миграции делает только backend) и стартуют после здорового backend |
 | `frontend` | собранный React (nginx, не root): отдаёт SPA и проксирует `/api`, `/health`, `/admin`, `/static` на backend — один origin, CORS не нужен |
 

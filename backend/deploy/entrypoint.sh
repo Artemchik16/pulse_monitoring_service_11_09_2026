@@ -9,6 +9,9 @@ python manage.py migrate --noinput
 echo "entrypoint: demo user"
 python manage.py create_demo_user
 
+echo "entrypoint: admin user"
+python manage.py create_admin_user
+
 echo "entrypoint: demo data"
 python manage.py seed_demo
 

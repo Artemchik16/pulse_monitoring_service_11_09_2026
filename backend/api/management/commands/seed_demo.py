@@ -16,7 +16,6 @@ DEMO_MONITORS = (
     {"name": "Pleazy", "url": "https://pleazy.kz/"},
     {"name": "EnterEdu", "url": "https://enteredu.kz/"},
     {"name": "AgroGo", "url": "https://agrogo.kz/"},
-    {"name": "Proxymo", "url": "https://proxymo.kz/"},
 )
 
 # One monitor per playground mode (TZ D1). The playground endpoints start in the mode of their name;

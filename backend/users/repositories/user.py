@@ -23,3 +23,8 @@ class UserRepository:
         """Create a User with a hashed password."""
 
         return User.objects.create_user(email=email, password=password)
+
+    def create_superuser(self, *, email: str, password: str) -> User:
+        """Create a staff superuser (Django admin access)."""
+
+        return User.objects.create_superuser(email=email, password=password)
