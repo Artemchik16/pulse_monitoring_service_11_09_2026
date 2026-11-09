@@ -1,6 +1,8 @@
 import pytest
 from django.contrib.auth.hashers import identify_hasher
+from django.core.cache import cache
 from django.urls import reverse
+from rest_framework.test import APIClient
 
 from users.repositories import UserRepository
 from users.services import AuthService
@@ -9,6 +11,19 @@ from users.throttling import AuthRateThrottle
 pytestmark = pytest.mark.django_db
 
 PASSWORD = "Str0ng-pass-123"
+
+
+@pytest.fixture(autouse=True)
+def _isolated_cache(settings):
+    """Use in-memory cache so tests do not need Redis and throttles start clean."""
+
+    settings.CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    cache.clear()
+
+
+@pytest.fixture
+def api_client() -> APIClient:
+    return APIClient()
 
 
 def _register(api_client, email="user@example.com", password=PASSWORD):

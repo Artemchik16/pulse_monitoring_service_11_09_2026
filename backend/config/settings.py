@@ -16,24 +16,12 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     # Database environ
     DATABASE_URL=(str, "postgres://pulse:pulse@127.0.0.1:5432/pulse"),
-    DB_CONN_MAX_AGE=(int, 60),
     # Redis environ (cache + Celery broker)
     REDIS_URL=(str, "redis://127.0.0.1:6379/0"),
     CELERY_BROKER_URL=(str, ""),
     # CORS/CSRF environ
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:5173", "http://127.0.0.1:5173"]),
     CSRF_TRUSTED_ORIGINS=(list, ["http://localhost:5173", "http://127.0.0.1:5173"]),
-    # JWT environ
-    JWT_ACCESS_TOKEN_LIFETIME_MIN=(int, 15),
-    JWT_REFRESH_TOKEN_LIFETIME_DAYS=(int, 7),
-    AUTH_THROTTLE_RATE=(str, "20/min"),
-    # Monitoring environ
-    INTERNAL_TICK_TOKEN=(str, ""),
-    # AI environ
-    AI_PROVIDER=(str, "stub"),
-    AI_BASE_URL=(str, ""),
-    AI_API_KEY=(str, ""),
-    AI_MODEL=(str, ""),
     # Telegram environ
     TELEGRAM_BOT_TOKEN=(str, ""),
     TELEGRAM_BOT_USERNAME=(str, ""),
@@ -120,7 +108,7 @@ TEMPLATES = [
 # Database (PostgreSQL)
 #########################
 DATABASES = {"default": env.db("DATABASE_URL")}
-DATABASES["default"]["CONN_MAX_AGE"] = env("DB_CONN_MAX_AGE")
+DATABASES["default"]["CONN_MAX_AGE"] = 60
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 #########################
 
@@ -210,7 +198,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.unified_exception_handler",
-    "DEFAULT_THROTTLE_RATES": {"auth": env("AUTH_THROTTLE_RATE")},
+    "DEFAULT_THROTTLE_RATES": {"auth": "20/min"},
 }
 #########################
 
@@ -234,8 +222,8 @@ SPECTACULAR_SETTINGS = {
 # Simple JWT (access + refresh, ротация с blacklist)
 #########################
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env("JWT_ACCESS_TOKEN_LIFETIME_MIN")),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=env("JWT_REFRESH_TOKEN_LIFETIME_DAYS")),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -270,13 +258,6 @@ if not DEBUG:
 
 # Project settings
 #########################
-INTERNAL_TICK_TOKEN = env("INTERNAL_TICK_TOKEN")
-
-AI_PROVIDER = env("AI_PROVIDER")
-AI_BASE_URL = env("AI_BASE_URL")
-AI_API_KEY = env("AI_API_KEY")
-AI_MODEL = env("AI_MODEL")
-
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
 TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME")
 TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET")

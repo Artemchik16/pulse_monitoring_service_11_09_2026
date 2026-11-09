@@ -3,6 +3,16 @@
 Сервис мониторинга доступности сайтов и API. Техническое задание — [`docs/TZ.md`](docs/TZ.md),
 правила разработки — [`docs/AGENTS.md`](docs/AGENTS.md).
 
+## Локальный запуск
+
+```bash
+cp backend/.env.example backend/.env   # заполнить DEBUG=true, SECRET_KEY и т.д.
+docker compose up -d --build           # PostgreSQL :5432, Redis :6379, миграции, Celery worker + beat
+
+cd backend && uv sync && uv run python manage.py runserver   # API на :8000
+cd frontend && nvm use && npm install && npm run dev         # UI на :5173
+```
+
 ## Ключевые решения
 
 ### Аутентификация (A1)
@@ -15,14 +25,14 @@
   не отправляется браузером автоматически, поэтому CSRF-атака на API невозможна по построению.
 - Тот же токен без изменений подходит для Swagger, скриптов и тестов.
 - Недостаток JWT — нельзя мгновенно отозвать выданный токен. Он закрыт так:
-  - **access** живёт 15 минут (`JWT_ACCESS_TOKEN_LIFETIME_MIN`);
-  - **refresh** живёт 7 дней (`JWT_REFRESH_TOKEN_LIFETIME_DAYS`) и **ротируется**:
+  - **access** живёт 15 минут;
+  - **refresh** живёт 7 дней и **ротируется**:
     при каждом `/refresh` старый токен попадает в blacklist (таблица в PostgreSQL),
     повторное использование украденного refresh возвращает 401;
   - **выход** (`/logout`) заносит refresh в blacklist; access истекает сам не позже чем через 15 минут.
 - Пароли хешируются **Argon2** (`Argon2PasswordHasher`), проверяются стандартными валидаторами Django
   (длина, схожесть с email, словарь частых паролей, только цифры).
-- Эндпоинты `/auth/*` ограничены по частоте (`AUTH_THROTTLE_RATE`, по умолчанию 20/мин с IP) —
+- Эндпоинты `/auth/*` ограничены по частоте (20 запросов в минуту с IP) —
   защита от перебора паролей.
 
 | Метод | Путь                     | Доступ        | Ответ                         |
